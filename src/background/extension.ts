@@ -246,7 +246,7 @@ export class Extension {
         await TabManager.cleanState();
         await DevTools.init(Extension.onSettingsChanged);
         await Promise.all([
-            ConfigManager.load({local: true}),
+            ConfigManager.load(),
             Extension.MV3syncSystemColorStateManager(null),
             UserStorage.loadSettings(),
         ]);
@@ -260,9 +260,6 @@ export class Extension {
                 }
             });
         }
-        if (UserStorage.settings.syncSitesFixes) {
-            await ConfigManager.load({local: false});
-        }
         Extension.updateAutoState();
         Extension.runWakeDetector();
         Extension.onAppToggle();
@@ -274,7 +271,6 @@ export class Extension {
             TabManager.updateContentScript({runOnProtectedPages: UserStorage.settings.enableForProtectedPages});
         }
 
-        UserStorage.settings.fetchNews && Newsmaker.subscribe();
         Extension.startBarrier!.resolve();
     }
 
@@ -557,9 +553,6 @@ export class Extension {
             } else {
                 resetWindowTheme();
             }
-        }
-        if (prev.fetchNews !== UserStorage.settings.fetchNews) {
-            UserStorage.settings.fetchNews ? Newsmaker.subscribe() : Newsmaker.unSubscribe();
         }
 
         if (prev.enableContextMenus !== UserStorage.settings.enableContextMenus) {

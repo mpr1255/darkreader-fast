@@ -5,10 +5,8 @@ import type {ParsedColorSchemeConfig} from '../utils/colorscheme-parser';
 import {parseColorSchemeConfig} from '../utils/colorscheme-parser';
 import {CONFIG_URL_BASE} from '../utils/links';
 import {parseArray} from '../utils/text';
-import {getDuration} from '../utils/time';
 import {indexURLTemplateList, isURLInIndexedList} from '../utils/url';
 import type {URLTemplateIndex} from '../utils/url';
-import UserStorage from './user-storage';
 import {logWarn} from './utils/log';
 import {readText} from './utils/network';
 
@@ -39,7 +37,6 @@ const CONFIG_URLs = {
     },
 };
 
-const REMOTE_TIMEOUT_MS = getDuration({seconds: 10});
 
 interface LocalConfig {
     local: boolean;
@@ -81,28 +78,8 @@ export default class ConfigManager {
         staticThemes: null as string | null,
     };
 
-    private static async loadConfig({
-        name,
-        local,
-        localURL,
-        remoteURL,
-    }: Config) {
-        let $config: string;
-        const loadLocal = async () => await readText({url: localURL});
-        if (local) {
-            $config = await loadLocal();
-        } else {
-            try {
-                $config = await readText({
-                    url: `${remoteURL}?nocache=${Date.now()}`,
-                    timeout: REMOTE_TIMEOUT_MS,
-                });
-            } catch (err) {
-                console.error(`${name} remote load error`, err);
-                $config = await loadLocal();
-            }
-        }
-        return $config;
+    private static async loadConfig({localURL}: Config) {
+        return await readText({url: localURL});
     }
 
     private static async loadColorSchemes({local}: LocalConfig) {
@@ -171,13 +148,8 @@ export default class ConfigManager {
         ConfigManager.handleStaticThemes();
     }
 
-    static async load(config?: LocalConfig): Promise<void> {
-        if (!config) {
-            await UserStorage.loadSettings();
-            config = {
-                local: !UserStorage.settings.syncSitesFixes,
-            };
-        }
+    static async load(): Promise<void> {
+        const config: LocalConfig = {local: true};
 
         await Promise.all([
             ConfigManager.loadColorSchemes(config),
