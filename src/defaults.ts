@@ -86,7 +86,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     enabledFor: [],
     disabledFor: [],
     changeBrowserTheme: false,
-    syncSettings: false,
+    syncSettings: true,
     syncSitesFixes: false,
     automation: {
         enabled: isEdge && isMobile ? true : false,
