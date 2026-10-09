@@ -31,12 +31,6 @@ function hasBuiltInDarkTheme() {
             if (!bgColor) {
                 return false;
             }
-            if (bgColor.r === 24 && bgColor.g === 26 && bgColor.b === 27) {
-                // For some websites changes to CSSStyleSheet.disabled and HTMLStyleElement.textContent
-                // are not being applied synchronously. For example https://zorin.com/
-                // Probably a browser bug. Treat as not having a dark theme.
-                return false;
-            }
             if (bgColor.a === 1) {
                 const bgLightness = getSRGBLightness(bgColor.r, bgColor.g, bgColor.b);
                 if (bgLightness > 0.6) {
@@ -135,11 +129,22 @@ function runCheck(callback: (hasDarkTheme: boolean) => void) {
                 (s) => (s.cssRules?.[0] as CSSStyleRule)?.selectorText?.startsWith('#__darkreader')
             ) : [],
         );
+    // Pages can transition every property, as zorin.com does with
+    // * { transition: 150ms }. A transition reports its start value, which
+    // would be this extension's colour, so stop transitions while sampling.
+    const noTransitions = document.createElement('style');
+    noTransitions.classList.add('darkreader');
+    noTransitions.textContent = '*, *::before, *::after { transition: none !important; }';
+    document.documentElement.append(noTransitions);
     drSheets.forEach((sheet) => sheet.disabled = true);
 
     const darkThemeDetected = hasBuiltInDarkTheme();
 
     drSheets.forEach((sheet) => sheet.disabled = false);
+    // Apply the restored styles before allowing transitions, or the page
+    // would fade from its own colours back to this extension's.
+    getComputedStyle(document.documentElement).color;
+    noTransitions.remove();
     lightUnderDarkScheme = darkThemeDetected ? null : isSystemDarkModeEnabled();
     callback(darkThemeDetected);
 }
