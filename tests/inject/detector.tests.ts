@@ -75,4 +75,18 @@ describe('DARK THEME DETECTOR', () => {
         document.dispatchEvent(new Event('readystatechange'));
         expect(results).toEqual([true]);
     });
+
+    it('should read the body text colour when the page paints its background on a wrapper', () => {
+        document.body.innerHTML = multiline(
+            '<style>',
+            '    html, body { background: transparent; margin: 0; }',
+            '    body { color: #e5e5e5; }',
+            '    main { min-height: 100vh; background: #1b2c36; }',
+            '</style>',
+            '<main><p>Light text on a dark wrapper</p></main>',
+        );
+        const results: boolean[] = [];
+        runDarkThemeDetector((hasDarkTheme) => results.push(hasDarkTheme), []);
+        expect(results).toEqual([true]);
+    });
 });

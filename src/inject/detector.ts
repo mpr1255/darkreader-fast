@@ -60,7 +60,8 @@ function hasBuiltInDarkTheme() {
     }
 
     if (rootColor.a === 0 && bodyColor.a === 0) {
-        const rootTextColor = parseColorWithCache(rootStyle.color);
+        // Pages set their text colour on the body more often than on the root.
+        const rootTextColor = parseColorWithCache(document.body ? getComputedStyle(document.body).color : rootStyle.color);
         if (rootTextColor) {
             const textLightness = getSRGBLightness(rootTextColor.r, rootTextColor.g, rootTextColor.b);
             return textLightness > 0.5;
