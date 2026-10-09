@@ -1,4 +1,5 @@
 {
+    "exclude": ["one_offs"],
     "compilerOptions": {
         "target": "ES2019",
         "baseUrl": "./",
