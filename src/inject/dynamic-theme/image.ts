@@ -126,10 +126,16 @@ let context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null
 function createCanvas() {
     const maxWidth = MAX_ANALYSIS_PIXELS_COUNT;
     const maxHeight = MAX_ANALYSIS_PIXELS_COUNT;
-    canvas = document.createElement('canvas');
-    canvas.width = maxWidth;
-    canvas.height = maxHeight;
-    context = canvas.getContext('2d', {willReadFrequently: true})!;
+    // See domParseColor: OffscreenCanvas avoids the slow first draw.
+    if (typeof OffscreenCanvas === 'function') {
+        canvas = new OffscreenCanvas(maxWidth, maxHeight);
+        context = canvas.getContext('2d', {willReadFrequently: true})!;
+    } else {
+        canvas = document.createElement('canvas');
+        canvas.width = maxWidth;
+        canvas.height = maxHeight;
+        context = canvas.getContext('2d', {willReadFrequently: true})!;
+    }
     context.imageSmoothingEnabled = false;
 }
 
