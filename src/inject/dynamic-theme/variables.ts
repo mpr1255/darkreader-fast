@@ -501,6 +501,12 @@ export class VariablesStore {
     private inspectVariable(varName: string, value: string) {
         this.unstableVarValues.set(varName, value);
 
+        // A reset such as `--x: initial` says nothing about the type,
+        // so the variable's first real value is still inspected.
+        if (cssWideKeywords.has(value.trim())) {
+            return;
+        }
+
         const hasVar = isVarDependant(value);
         if (hasVar && isConstructedColorVar(value)) {
             if (!this.unknownColorVars.has(varName)) {
@@ -814,6 +820,8 @@ function wrapBorderColorVariableName(name: string) {
 function wrapBgImgVariableName(name: string) {
     return `--darkreader-bgimg${name}`;
 }
+
+const cssWideKeywords = new Set(['initial', 'inherit', 'unset', 'revert', 'revert-layer']);
 
 function isVariable(property: string) {
     return property.startsWith('--');

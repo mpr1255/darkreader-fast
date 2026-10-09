@@ -158,6 +158,19 @@ describe('CSS VARIABLES OVERRIDE', () => {
         expect(getComputedStyle(container.querySelector('h1')!).backgroundColor).toBe('rgb(102, 102, 102)');
     });
 
+    it('should override background variable first reset with a keyword', () => {
+        container.innerHTML = multiline(
+            '<style>',
+            '    :root { --bg: initial; }',
+            '    :root { --bg: gray; }',
+            '    h1 { background: var(--bg); }',
+            '</style>',
+            '<h1>CSS <strong>variables</strong>!</h1>',
+        );
+        createOrUpdateDynamicTheme(theme, null, false);
+        expect(getComputedStyle(container.querySelector('h1')!).backgroundColor).toBe('rgb(102, 102, 102)');
+    });
+
     it('should skip undefined variables', () => {
         container.innerHTML = multiline(
             '<style>',
