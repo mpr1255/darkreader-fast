@@ -4,10 +4,12 @@ import {emulateColorScheme} from '../../src/utils/media-query';
 import {multiline} from './support/test-utils';
 
 let hidden = false;
+let readyState: DocumentReadyState = 'complete';
 let scheme: 'light' | 'dark' = 'light';
 
 beforeEach(() => {
     Object.defineProperty(document, 'hidden', {configurable: true, get: () => hidden});
+    Object.defineProperty(document, 'readyState', {configurable: true, get: () => readyState});
     // A light result is remembered until the colour scheme changes.
     scheme = scheme === 'light' ? 'dark' : 'light';
     emulateColorScheme(scheme);
@@ -16,7 +18,9 @@ beforeEach(() => {
 afterEach(() => {
     stopDarkThemeDetector();
     delete (document as any).hidden;
+    delete (document as any).readyState;
     hidden = false;
+    readyState = 'complete';
     document.body.innerHTML = '';
 });
 
@@ -54,5 +58,21 @@ describe('DARK THEME DETECTOR', () => {
         runDarkThemeDetector((hasDarkTheme) => results.push(hasDarkTheme), []);
         expect(results).toEqual([false]);
         expect(getComputedStyle(document.body).backgroundColor).toBe('rgb(0, 0, 0)');
+    });
+
+    it('should wait until the page has loaded', () => {
+        document.body.innerHTML = multiline(
+            '<style>body { min-height: 100px; }</style>',
+            '<p>Dark page whose style sheet is loading</p>',
+        );
+        readyState = 'interactive';
+        const results: boolean[] = [];
+        runDarkThemeDetector((hasDarkTheme) => results.push(hasDarkTheme), []);
+        expect(results).toEqual([]);
+
+        document.body.insertAdjacentHTML('beforeend', '<style>html, body { background: black; color: white; }</style>');
+        readyState = 'complete';
+        document.dispatchEvent(new Event('readystatechange'));
+        expect(results).toEqual([true]);
     });
 });

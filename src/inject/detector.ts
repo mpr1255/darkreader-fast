@@ -123,6 +123,20 @@ function runCheck(callback: (hasDarkTheme: boolean) => void) {
         return;
     }
 
+    // Until the page has loaded, the style sheets or scripts that apply its dark
+    // theme may not have taken effect, more often on a first visit with nothing
+    // cached, and the page would look light. Check once it has loaded.
+    if (document.readyState !== 'complete') {
+        readyStateListener = () => {
+            if (document.readyState === 'complete') {
+                stopDarkThemeDetector();
+                runCheck(callback);
+            }
+        };
+        document.addEventListener('readystatechange', readyStateListener);
+        return;
+    }
+
     const drSheets = Array.from(document.styleSheets).filter((s) => (s.ownerNode as HTMLElement)?.classList.contains('darkreader'))
         .concat(
             Array.isArray(document.adoptedStyleSheets) ? Array.from(document.adoptedStyleSheets).filter(
