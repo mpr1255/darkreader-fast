@@ -111,8 +111,14 @@ function runCheck(callback: (hasDarkTheme: boolean) => void) {
     const darkThemeDetected = hasBuiltInDarkTheme();
 
     drSheets.forEach((sheet) => sheet.disabled = false);
+    lightUnderDarkScheme = darkThemeDetected ? null : isSystemDarkModeEnabled();
     callback(darkThemeDetected);
 }
+
+// The check forces several full style and layout passes. Once a page has
+// been found light, later theme messages (settings changes) skip it until the
+// system colour scheme changes, since pages may follow prefers-color-scheme.
+let lightUnderDarkScheme: boolean | null = null;
 
 function hasSomeStyle() {
     if (document.querySelector(COLOR_SCHEME_META_SELECTOR) != null) {
@@ -152,6 +158,10 @@ function canCheckForStyle() {
 
 export function runDarkThemeDetector(callback: (hasDarkTheme: boolean) => void, hints: DetectorHint[]): void {
     stopDarkThemeDetector();
+    if (lightUnderDarkScheme === isSystemDarkModeEnabled()) {
+        callback(false);
+        return;
+    }
     if (hints && hints.length > 0) {
         const hint = hints[0];
         if (hint.noDarkTheme) {
