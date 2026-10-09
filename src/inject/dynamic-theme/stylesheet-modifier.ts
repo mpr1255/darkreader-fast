@@ -27,7 +27,7 @@ interface ModifySheetOptions {
     force: boolean;
     prepareSheet: () => CSSBuilder;
     isAsyncCancelled: () => boolean;
-    onComplete?: () => void;
+    onComplete?: (completed: boolean) => void;
 }
 
 interface StyleSheetModifier {
@@ -105,7 +105,7 @@ export function createStyleSheetModifier(): StyleSheetModifier {
             if (id === taskId) {
                 rendering = false;
             }
-            options.onComplete?.();
+            options.onComplete?.(completed);
         });
     }
 

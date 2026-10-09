@@ -163,8 +163,8 @@ export function createAdoptedStyleSheetOverride(node: Document | ShadowRoot): Ad
                 ignoreImageAnalysis,
                 force: false,
                 isAsyncCancelled,
-                onComplete: () => {
-                    if (!isAsyncCancelled()) {
+                onComplete: (completed) => {
+                    if (completed && !isAsyncCancelled()) {
                         overridesBySource.set(sheet, override);
                         rulesChangeKey = getRulesChangeKey();
                     }

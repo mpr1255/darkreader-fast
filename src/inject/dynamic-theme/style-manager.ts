@@ -449,13 +449,13 @@ export function manageStyle(element: StyleElement, {update, loadingStart, loadin
                 ignoreImageAnalysis,
                 force,
                 isAsyncCancelled,
-                onComplete: () => {
+                onComplete: (completed) => {
                     isOverrideEmpty = __PLUS__ ? false : (!syncStyle?.sheet || syncStyle.sheet.cssRules.length === 0);
                     loadingEnd();
-                    if (!isAsyncCancelled() && sheetModifier.shouldRebuildStyle()) {
+                    if (completed && !isAsyncCancelled() && sheetModifier.shouldRebuildStyle()) {
                         addReadyStateCompleteListener(() => update());
                     }
-                    if (__TEST__) {
+                    if (__TEST__ && completed) {
                         document.dispatchEvent(new CustomEvent('__darkreader__test__dynamicUpdateComplete'));
                     }
                 },

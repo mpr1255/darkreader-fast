@@ -46,7 +46,7 @@ describe('STYLE ELEMENTS', () => {
         modifier.modifySheet(options);
         expect(prepared).toBe(false);
         style.textContent = `@media screen {${Array.from({length: 256}, (_, i) => `.item-${i} { color: blue !important; }`).join('')}}`;
-        const complete = new Promise<void>((resolve) => modifier.modifySheet({...options, sourceCSSRules: style.sheet!.cssRules, onComplete: resolve}));
+        const complete = new Promise<void>((resolve) => modifier.modifySheet({...options, sourceCSSRules: style.sheet!.cssRules, onComplete: () => resolve()}));
         clock.and.callThrough();
         await complete;
         const group = overrideStyle.sheet!.cssRules[0] as CSSMediaRule;
@@ -77,13 +77,19 @@ describe('STYLE ELEMENTS', () => {
             },
             isAsyncCancelled: () => cancelled,
         };
-        const complete = new Promise<void>((resolve) => modifier.modifySheet({...options, onComplete: resolve}));
+        const complete = new Promise<void>((resolve) => modifier.modifySheet({...options, onComplete: (completed) => {
+            expect(completed).toBe(false);
+            resolve();
+        }}));
         cancelled = true;
         clock.and.callThrough();
         await complete;
         expect(prepared).toBe(false);
         cancelled = false;
-        await new Promise<void>((resolve) => modifier.modifySheet({...options, onComplete: resolve}));
+        await new Promise<void>((resolve) => modifier.modifySheet({...options, onComplete: (completed) => {
+            expect(completed).toBe(true);
+            resolve();
+        }}));
         expect(prepared).toBe(true);
     });
 
