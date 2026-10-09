@@ -41,6 +41,46 @@ afterEach(() => {
 });
 
 describe('CSS VARIABLES OVERRIDE', () => {
+    it('should update only changed variables in a large nested rule', async () => {
+        const definitions = document.createElement('style');
+        definitions.textContent = `@media screen {
+            :root { ${Array.from({length: 128}, (_, i) => `--color${i}: red !important;`).join(' ')} }
+            h2 { color: green; }
+        }`;
+        container.append(definitions);
+        const heading = document.createElement('h1');
+        container.append(heading);
+        createOrUpdateDynamicTheme(theme, null, false);
+
+        const sheet = (definitions.nextSibling as HTMLStyleElement).sheet!;
+        const group = sheet.cssRules[0] as CSSMediaRule;
+        const variableRule = group.cssRules[0] as CSSStyleRule;
+        const neighbor = group.cssRules[1];
+        const insert = spyOn(group, 'insertRule').and.callThrough();
+
+        const usage = document.createElement('style');
+        usage.textContent = 'h1 { color: var(--color0); background-color: var(--color127); }';
+        container.append(usage);
+        await timeout(0);
+
+        expect(getComputedStyle(heading).color).toBe('rgb(255, 26, 26)');
+        expect(getComputedStyle(heading).backgroundColor).toBe('rgb(204, 0, 0)');
+        expect(variableRule.style.getPropertyPriority('--darkreader-text--color0')).toBe('important');
+        expect(variableRule.style.getPropertyValue('--color0')).toBe('');
+        expect(variableRule.style.getPropertyValue('--color1')).toBe('red');
+
+        const additionalUsage = document.createElement('style');
+        additionalUsage.textContent = 'h1 { border: 1px solid var(--color0); }';
+        container.append(additionalUsage);
+        await timeout(0);
+
+        expect(getComputedStyle(heading).color).toBe('rgb(255, 26, 26)');
+        expect(getComputedStyle(heading).borderTopColor).toBe('rgb(179, 0, 0)');
+        expect(group.cssRules[0]).toBe(variableRule);
+        expect(group.cssRules[1]).toBe(neighbor);
+        expect(insert).not.toHaveBeenCalled();
+    });
+
     it('should override style with variables', () => {
         container.innerHTML = multiline(
             '<style>',

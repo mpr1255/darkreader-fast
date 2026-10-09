@@ -302,8 +302,8 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                     // TODO: Don't search for index, store some way or use Linked List.
                     const index = readyDeclarations.indexOf(oldDecs[0], initialIndex);
                     readyDeclarations.splice(index, oldDecs.length, ...readyVarDecs);
+                    rebuildVarRule(varKey, oldDecs, readyVarDecs);
                     oldDecs = readyVarDecs;
-                    rebuildVarRule(varKey);
                 });
                 varTypeChangeCleaners.add(() => onTypeChange.removeListeners());
             }
@@ -393,10 +393,28 @@ export function createStyleSheetModifier(): StyleSheetModifier {
             asyncDeclarations.delete(key);
         }
 
-        function rebuildVarRule(key: number) {
+        function rebuildVarRule(key: number, oldDeclarations: ReadyDeclaration[], newDeclarations: ReadyDeclaration[]) {
             const {rule, target, index} = varDeclarations.get(key)!;
-            target.deleteRule(index);
-            setRule(target, index, rule);
+            const cssRule = target.cssRules[index];
+            if (cssRule instanceof CSSStyleRule) {
+                // A rule can define thousands of variables. Update only this variable's
+                // declarations instead of reparsing the entire rule for each type change.
+                for (const {property} of oldDeclarations) {
+                    if (!newDeclarations.some((d) => d.property === property)) {
+                        cssRule.style.removeProperty(property);
+                    }
+                }
+                for (const {property, value, important} of newDeclarations) {
+                    if (value) {
+                        cssRule.style.setProperty(property, String(value), important ? 'important' : '');
+                    } else {
+                        cssRule.style.removeProperty(property);
+                    }
+                }
+            } else {
+                target.deleteRule(index);
+                setRule(target, index, rule);
+            }
         }
 
         buildStyleSheet();
