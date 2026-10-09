@@ -33,7 +33,10 @@ function hasBuiltInDarkTheme() {
             }
             if (bgColor.a === 1) {
                 const bgLightness = getSRGBLightness(bgColor.r, bgColor.g, bgColor.b);
-                if (bgLightness > 0.6) {
+                // A vivid colour, such as a yellow button, is an accent rather
+                // than a page background, so it does not make the page light.
+                const chroma = (Math.max(bgColor.r, bgColor.g, bgColor.b) - Math.min(bgColor.r, bgColor.g, bgColor.b)) / 255;
+                if (bgLightness > 0.6 && chroma < 0.5) {
                     return false;
                 }
             } else {

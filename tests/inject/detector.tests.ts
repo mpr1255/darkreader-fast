@@ -76,6 +76,20 @@ describe('DARK THEME DETECTOR', () => {
         expect(results).toEqual([true]);
     });
 
+    it('should not take a vivid button for a light page', () => {
+        document.body.innerHTML = multiline(
+            '<style>',
+            '    html, body { background: #111; color: #eee; margin: 0; }',
+            '    body { min-height: 100vh; }',
+            '    button { display: block; width: 100vw; height: 50vh; border: 0; background: rgb(233, 207, 30); color: #1a1708; }',
+            '</style>',
+            '<button>Try it</button>',
+        );
+        const results: boolean[] = [];
+        runDarkThemeDetector((hasDarkTheme) => results.push(hasDarkTheme), []);
+        expect(results).toEqual([true]);
+    });
+
     it('should read the body text colour when the page paints its background on a wrapper', () => {
         document.body.innerHTML = multiline(
             '<style>',
