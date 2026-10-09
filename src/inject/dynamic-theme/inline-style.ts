@@ -565,6 +565,8 @@ export function overrideInlineStyle(element: HTMLElement, theme: Theme, ignoreIn
                     } else {
                         svg.removeAttribute('data-darkreader-inline-invert');
                     }
+                }).catch(() => {
+                    // An inline SVG without xmlns cannot load as an image; leave it as it is.
                 });
             };
             analyzeSVGAsImage();
