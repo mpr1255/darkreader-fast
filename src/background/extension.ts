@@ -42,7 +42,6 @@ interface SystemColorState extends Record<string, unknown> {
     wasLastColorSchemeDark: boolean | null;
 }
 
-declare const __CHROMIUM_MV2__: boolean;
 declare const __CHROMIUM_MV3__: boolean;
 declare const __PLUS__: boolean;
 declare const __THUNDERBIRD__: boolean;
@@ -297,7 +296,7 @@ export class Extension {
         };
     }
 
-    private static onCommandInternal = async (command: Command, tabId: number | null, frameId: number | null, frameURL: string | null) => {
+    private static onCommandInternal = async (command: Command, _tabId: number | null, _frameId: number | null, _frameURL: string | null) => {
         await Extension.waitUntilReady();
         Extension.stateManager!.loadState();
         switch (command) {
@@ -308,41 +307,10 @@ export class Extension {
                     automation: {...UserStorage.settings.automation, ...{enabled: false}},
                 });
                 break;
-            case 'addSite': {
+            case 'addSite':
                 logInfo('Add Site command entered');
-                async function scriptPDF(tabId: number, frameId: number): Promise<boolean> {
-                    // We can not detect PDF if we do not know where we are looking for it
-                    if (!(Number.isInteger(tabId) && Number.isInteger(frameId))) {
-                        return false;
-                    }
-                    function detectPDF(): boolean {
-                        // Newer Chromium puts the viewer in a closed shadow root, so the
-                        // body has no children to inspect.
-                        return document.contentType === 'application/pdf';
-                    }
-
-                    if (__CHROMIUM_MV3__) {
-                        return (await chrome.scripting.executeScript({
-                            target: {tabId, frameIds: [frameId]},
-                            func: detectPDF,
-                        }))[0].result || false;
-                    } else if (__CHROMIUM_MV2__) {
-                        return new Promise<boolean>((resolve) => chrome.tabs.executeScript(tabId, {
-                            frameId,
-                            code: `(${detectPDF.toString()})()`,
-                        }, (results) => resolve(results?.[0])));
-                    }
-                    return false;
-                }
-
-                const pdf = async () => isPDF(frameURL || await TabManager.getActiveTabURL());
-                if (((__CHROMIUM_MV2__ || __CHROMIUM_MV3__) && await scriptPDF(tabId!, frameId!)) || await pdf()) {
-                    Extension.changeSettings({enableForPDF: !UserStorage.settings.enableForPDF});
-                } else {
-                    Extension.toggleActiveTab();
-                }
+                Extension.toggleActiveTab();
                 break;
-            }
             case 'switchEngine': {
                 logInfo('Switch Engine command entered');
                 const engines = Object.values(ThemeEngine);

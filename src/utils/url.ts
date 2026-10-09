@@ -352,8 +352,8 @@ export function isURLEnabled(url: string, userSettings: UserSettings, {isProtect
     if (__THUNDERBIRD__) {
         return true;
     }
-    if (isPDF(url)) {
-        return userSettings.enableForPDF;
+    if (isPDF(url) && !userSettings.enableForPDF) {
+        return false;
     }
     const isURLInDisabledList = isInListOptimized(url, userSettings.disabledFor);
     const isURLInEnabledList = isInListOptimized(url, userSettings.enabledFor);
