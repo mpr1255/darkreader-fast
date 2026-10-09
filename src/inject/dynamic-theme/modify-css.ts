@@ -15,6 +15,7 @@ import type {ImageDetails} from './image';
 import {getImageDetails, getFilteredImageURL, getSolidColorImageURL, cleanImageProcessingCache, requestBlobURLCheck, isBlobURLCheckResultReady, tryConvertDataURLToBlobURL} from './image';
 import {modifyBackgroundColor, modifyBorderColor, modifyForegroundColor, modifyGradientColor, modifyShadowColor, clearColorModificationCache} from './modify-colors';
 import {getSheetScope} from './style-scope';
+import {runStyleTask} from './style-task';
 import type {CSSVariableModifier, VariablesStore} from './variables';
 
 
@@ -382,38 +383,65 @@ interface BgImageMatches {
 }
 
 const imageSelectorQueue = new Map<string, Array<() => void>>();
-const imageSelectorNodeQueue = new Set<Element>();
-let imageSelectorQueueFrameId: number | null = null;
+const imageSelectorNodeQueue = new Set<Element | Document | ShadowRoot>();
+let imageSelectorCheckScheduled = false;
+let imageSelectorCheckGeneration = 0;
+let cancelImageSelectorCheck: (() => void) | null = null;
 let classObserver: MutationObserver | null = null;
 
 export function checkImageSelectors(node: Element | Document | ShadowRoot): void {
-    for (const [selector, callbacks] of imageSelectorQueue) {
-        if (node.querySelector(selector) || (node instanceof Element && node.matches(selector))) {
-            imageSelectorQueue.delete(selector);
-            callbacks.forEach((cb) => cb());
-        }
-    }
     if (imageSelectorQueue.size === 0) {
         classObserver?.disconnect();
         classObserver = null;
         return;
     }
+    imageSelectorNodeQueue.add(node);
     if (!classObserver) {
         classObserver = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                imageSelectorNodeQueue.add(mutation.target as Element);
-                if (!imageSelectorQueueFrameId) {
-                    imageSelectorQueueFrameId = requestAnimationFrame(() => {
-                        imageSelectorNodeQueue.forEach((element) => {
-                            checkImageSelectors(element);
-                        });
-                        imageSelectorNodeQueue.clear();
-                        imageSelectorQueueFrameId = null;
-                    });
-                }
-            });
+            mutations.forEach((mutation) => checkImageSelectors(mutation.target as Element));
         });
         classObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['class'], subtree: true});
+    }
+    if (imageSelectorCheckScheduled) {
+        return;
+    }
+    imageSelectorCheckScheduled = true;
+    const generation = imageSelectorCheckGeneration;
+    queueMicrotask(() => {
+        if (generation !== imageSelectorCheckGeneration) {
+            return;
+        }
+        cancelImageSelectorCheck = runStyleTask(checkQueuedImageSelectors(), () => generation !== imageSelectorCheckGeneration, () => {
+            imageSelectorCheckScheduled = false;
+        });
+    });
+}
+
+function* checkQueuedImageSelectors(): Generator {
+    while (imageSelectorNodeQueue.size > 0) {
+        const nodes = new Set(imageSelectorNodeQueue);
+        imageSelectorNodeQueue.clear();
+        for (const node of nodes) {
+            yield;
+            let parent = node.parentNode;
+            while (parent && !nodes.has(parent as Element | Document | ShadowRoot)) {
+                parent = parent.parentNode;
+            }
+            if (parent) {
+                continue;
+            }
+            for (const [selector, callbacks] of imageSelectorQueue) {
+                yield;
+                if ((node instanceof Element && node.matches(selector)) || node.querySelector(selector)) {
+                    imageSelectorQueue.delete(selector);
+                    callbacks.forEach((cb) => cb());
+                }
+            }
+        }
+    }
+    if (imageSelectorQueue.size === 0) {
+        classObserver?.disconnect();
+        classObserver = null;
     }
 }
 
@@ -782,6 +810,11 @@ export function cleanModificationCache(): void {
     cleanImageProcessingCache();
     awaitingForImageLoading.clear();
     imageSelectorQueue.clear();
+    imageSelectorCheckGeneration++;
+    cancelImageSelectorCheck?.();
+    cancelImageSelectorCheck = null;
+    imageSelectorNodeQueue.clear();
+    imageSelectorCheckScheduled = false;
     classObserver?.disconnect();
     classObserver = null;
 }

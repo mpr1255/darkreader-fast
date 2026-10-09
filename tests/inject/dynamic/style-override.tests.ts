@@ -22,6 +22,71 @@ afterEach(() => {
 });
 
 describe('STYLE ELEMENTS', () => {
+    it('should replace a suspended stylesheet render with the latest rules', async () => {
+        const style = document.createElement('style');
+        style.textContent = `@media screen {${Array.from({length: 256}, (_, i) => `.item-${i} { color: red !important; }`).join('')}}`;
+        container.append(style);
+        const overrideStyle = document.createElement('style');
+        container.append(overrideStyle);
+        const modifier = createStyleSheetModifier();
+        let prepared = false;
+        const options = {
+            theme,
+            sourceCSSRules: style.sheet!.cssRules,
+            ignoreImageAnalysis: [],
+            force: true,
+            prepareSheet: () => {
+                prepared = true;
+                return overrideStyle.sheet!;
+            },
+            isAsyncCancelled: () => false,
+        };
+        let time = performance.now();
+        const clock = spyOn(performance, 'now').and.callFake(() => time += 5);
+        modifier.modifySheet(options);
+        expect(prepared).toBe(false);
+        style.textContent = `@media screen {${Array.from({length: 256}, (_, i) => `.item-${i} { color: blue !important; }`).join('')}}`;
+        const complete = new Promise<void>((resolve) => modifier.modifySheet({...options, sourceCSSRules: style.sheet!.cssRules, onComplete: resolve}));
+        clock.and.callThrough();
+        await complete;
+        const group = overrideStyle.sheet!.cssRules[0] as CSSMediaRule;
+        expect(group.cssRules.length).toBe(256);
+        for (const rule of group.cssRules as unknown as CSSStyleRule[]) {
+            expect(rule.style.getPropertyValue('color')).toContain('--darkreader-text-0000ff');
+            expect(rule.style.getPropertyPriority('color')).toBe('important');
+        }
+    });
+
+    it('should cancel a suspended render and allow rendering the same rules again', async () => {
+        const style = document.createElement('style');
+        style.textContent = Array.from({length: 256}, (_, i) => `.item-${i} { color: red; }`).join('');
+        container.append(style);
+        let cancelled = false;
+        let prepared = false;
+        const modifier = createStyleSheetModifier();
+        let time = performance.now();
+        const clock = spyOn(performance, 'now').and.callFake(() => time += 2);
+        const options = {
+            theme,
+            sourceCSSRules: style.sheet!.cssRules,
+            ignoreImageAnalysis: [],
+            force: false,
+            prepareSheet: () => {
+                prepared = true;
+                return style.sheet!;
+            },
+            isAsyncCancelled: () => cancelled,
+        };
+        const complete = new Promise<void>((resolve) => modifier.modifySheet({...options, onComplete: resolve}));
+        cancelled = true;
+        clock.and.callThrough();
+        await complete;
+        expect(prepared).toBe(false);
+        cancelled = false;
+        await new Promise<void>((resolve) => modifier.modifySheet({...options, onComplete: resolve}));
+        expect(prepared).toBe(true);
+    });
+
     it('should fill CSSStyleSheet with overridden rules', () => {
         const style = document.createElement('style');
         style.textContent = 'body { background-color: white; } h1 { color: black; }';

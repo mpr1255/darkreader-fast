@@ -18,6 +18,7 @@ import {createSheetWatcher} from './watch/sheet-changes';
 import {prepareExtendedOverrideSheet, removeExtendedOverrideSheet} from '@plus/dynamic/inject';
 
 declare const __PLUS__: boolean;
+declare const __TEST__: boolean;
 
 declare global {
     interface Document {
@@ -367,10 +368,10 @@ export function manageStyle(element: StyleElement, {update, loadingStart, loadin
             loadingStart();
             getRulesAsync().then((results) => {
                 isLoadingRules = false;
-                loadingEnd();
                 if (results) {
                     update();
                 }
+                loadingEnd();
             }).catch((err) => {
                 logWarn(err);
                 isLoadingRules = false;
@@ -440,6 +441,7 @@ export function manageStyle(element: StyleElement, {update, loadingStart, loadin
         function buildOverrides() {
             const force = forceRenderStyle;
             forceRenderStyle = false;
+            loadingStart();
             sheetModifier.modifySheet({
                 prepareSheet: prepareOverridesSheet,
                 sourceCSSRules: rules!,
@@ -447,14 +449,17 @@ export function manageStyle(element: StyleElement, {update, loadingStart, loadin
                 ignoreImageAnalysis,
                 force,
                 isAsyncCancelled,
+                onComplete: () => {
+                    isOverrideEmpty = __PLUS__ ? false : (!syncStyle?.sheet || syncStyle.sheet.cssRules.length === 0);
+                    loadingEnd();
+                    if (!isAsyncCancelled() && sheetModifier.shouldRebuildStyle()) {
+                        addReadyStateCompleteListener(() => update());
+                    }
+                    if (__TEST__) {
+                        document.dispatchEvent(new CustomEvent('__darkreader__test__dynamicUpdateComplete'));
+                    }
+                },
             });
-            isOverrideEmpty = __PLUS__ ? false : (!syncStyle!.sheet || syncStyle!.sheet!.cssRules.length === 0);
-            if (sheetModifier.shouldRebuildStyle()) {
-                // "update" function schedules rebuilding the style
-                // ideally to wait for link loading, because some sites put links any time,
-                // but it can be complicated, so waiting for document completion can do the trick
-                addReadyStateCompleteListener(() => update());
-            }
         }
 
         buildOverrides();

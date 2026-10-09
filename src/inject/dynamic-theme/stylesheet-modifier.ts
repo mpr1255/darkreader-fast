@@ -2,10 +2,11 @@ import type {Theme} from '../../definitions';
 import {isChromium} from '../../utils/platform';
 import {createAsyncTasksQueue} from '../../utils/throttle';
 
-import {iterateCSSRules, iterateCSSDeclarations, isMediaRule, isLayerRule, isContainerRule, isStyleRule} from './css-rules';
+import {iterateCSSRulesGenerator, iterateCSSDeclarations, isMediaRule, isLayerRule, isContainerRule, isStyleRule} from './css-rules';
 import {themeCacheKeys} from './modify-colors';
 import type {ModifiableCSSDeclaration, ModifiableCSSRule} from './modify-css';
 import {getModifiableCSSDeclaration} from './modify-css';
+import {runStyleTask} from './style-task';
 import {variablesStore} from './variables';
 import type {CSSVariableModifier} from './variables';
 
@@ -26,6 +27,7 @@ interface ModifySheetOptions {
     force: boolean;
     prepareSheet: () => CSSBuilder;
     isAsyncCancelled: () => boolean;
+    onComplete?: () => void;
 }
 
 interface StyleSheetModifier {
@@ -44,6 +46,9 @@ export interface CSSBuilder {
 
 export function createStyleSheetModifier(): StyleSheetModifier {
     let renderId = 0;
+    let taskId = 0;
+    let cancelTask: (() => void) | null = null;
+    let rendering = false;
 
     let cssTextCounter = 0;
     const cssTextIds = new Map<string, string>();
@@ -89,6 +94,22 @@ export function createStyleSheetModifier(): StyleSheetModifier {
     }
 
     function modifySheet(options: ModifySheetOptions) {
+        const force = options.force || rendering;
+        cancelTask?.();
+        const id = ++taskId;
+        rendering = true;
+        cancelTask = runStyleTask(modifySheetRules({...options, force}), () => options.isAsyncCancelled() || id !== taskId, (completed) => {
+            if (!completed) {
+                prevFilterKey = null;
+            }
+            if (id === taskId) {
+                rendering = false;
+            }
+            options.onComplete?.();
+        });
+    }
+
+    function* modifySheetRules(options: ModifySheetOptions): Generator {
         const rules = options.sourceCSSRules;
         const {theme, ignoreImageAnalysis, force, prepareSheet, isAsyncCancelled} = options;
 
@@ -102,7 +123,11 @@ export function createStyleSheetModifier(): StyleSheetModifier {
         }
 
         const modRules: ModifiableCSSRule[] = [];
-        iterateCSSRules(rules, (rule) => {
+        for (const rule of iterateCSSRulesGenerator(rules, () => {
+            hasNonLoadedLink = true;
+        })) {
+            yield;
+
             const key = getStyleRuleKey(rule);
             let textDiffersFromPrev = false;
 
@@ -116,14 +141,14 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                 rulesChanged = true;
             } else {
                 modRules.push(rulesModCache.get(key)!);
-                return;
+                continue;
             }
 
             // A very specific case to skip. This causes a lot of calls to `getModifiableCSSDeclaration`
             // and currently contributes nothing in real-world case.
             // TODO: Allow `setRule` to throw a exception when we're modifying SVGs namespace styles.
             if (rule.style.all === 'revert') {
-                return;
+                continue;
             }
 
             const modDecs: ModifiableCSSDeclaration[] = [];
@@ -141,9 +166,7 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                 modRules.push(modRule);
             }
             rulesModCache.set(key, modRule!);
-        }, () => {
-            hasNonLoadedLink = true;
-        });
+        }
 
         notFoundCacheKeys.forEach((key) => {
             rulesTextCache.delete(key);
@@ -154,7 +177,6 @@ export function createStyleSheetModifier(): StyleSheetModifier {
         if (!force && !rulesChanged && !themeChanged) {
             return;
         }
-
         renderId++;
 
         interface ReadyGroup {
@@ -247,7 +269,12 @@ export function createStyleSheetModifier(): StyleSheetModifier {
         varTypeChangeCleaners.forEach((clear) => clear());
         varTypeChangeCleaners.clear();
 
-        modRules.filter((r) => r).forEach(({selector, declarations, parentRule}) => {
+        for (const modRule of modRules) {
+            if (!modRule) {
+                continue;
+            }
+            yield;
+            const {selector, declarations, parentRule} = modRule;
             const group = getGroup(parentRule);
             const readyStyleRule: ReadyStyleRule = {selector, declarations: [], isGroup: false};
             const readyDeclarations = readyStyleRule.declarations;
@@ -308,7 +335,8 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                 varTypeChangeCleaners.add(() => onTypeChange.removeListeners());
             }
 
-            declarations.forEach(({property, value, important, sourceValue}) => {
+            for (const {property, value, important, sourceValue} of declarations) {
+                yield;
                 if (typeof value === 'function') {
                     const modified = value(theme);
                     if (modified instanceof Promise) {
@@ -321,8 +349,8 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                 } else {
                     readyDeclarations.push({property, value, important, sourceValue});
                 }
-            });
-        });
+            }
+        }
 
         const sheet = prepareSheet();
 
@@ -357,22 +385,17 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                 return parent;
             }
 
-            function iterateReadyRules(
-                group: ReadyGroup,
-                target: CSSBuilder,
-                styleIterator: (s: ReadyStyleRule, t: CSSBuilder) => void,
-            ) {
-                group.rules.forEach((r) => {
+            function* iterateReadyRules(group: ReadyGroup, target: CSSBuilder): Generator<{rule: ReadyStyleRule; target: CSSBuilder}> {
+                for (const r of group.rules) {
                     if (r.isGroup) {
-                        const t = createTarget(r, target);
-                        iterateReadyRules(r, t, styleIterator);
+                        yield* iterateReadyRules(r, createTarget(r, target));
                     } else {
-                        styleIterator(r as ReadyStyleRule, target);
+                        yield {rule: r, target};
                     }
-                });
+                }
             }
 
-            iterateReadyRules(rootReadyGroup, sheet, (rule, target) => {
+            for (const {rule, target} of iterateReadyRules(rootReadyGroup, sheet)) {
                 const index = target.cssRules.length;
                 rule.declarations.forEach(({asyncKey, varKey}) => {
                     if (asyncKey != null) {
@@ -383,18 +406,26 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                     }
                 });
                 setRule(target, index, rule);
-            });
+            }
         }
 
         function rebuildAsyncRule(key: number) {
-            const {rule, target, index} = asyncDeclarations.get(key)!;
+            const info = asyncDeclarations.get(key);
+            if (!info) {
+                return;
+            }
+            const {rule, target, index} = info;
             target.deleteRule(index);
             setRule(target, index, rule);
             asyncDeclarations.delete(key);
         }
 
         function rebuildVarRule(key: number, oldDeclarations: ReadyDeclaration[], newDeclarations: ReadyDeclaration[]) {
-            const {rule, target, index} = varDeclarations.get(key)!;
+            const info = varDeclarations.get(key);
+            if (!info) {
+                return;
+            }
+            const {rule, target, index} = info;
             const cssRule = target.cssRules[index];
             if (cssRule instanceof CSSStyleRule) {
                 // A rule can define thousands of variables. Update only this variable's

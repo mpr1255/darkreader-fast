@@ -10,18 +10,28 @@ export function iterateCSSRules(
     onImportError?: () => void,
     importedSheets = new Set<CSSStyleSheet>()
 ): void {
-    forEach(rules, (rule) => {
+    for (const rule of iterateCSSRulesGenerator(rules, onImportError, importedSheets)) {
+        iterate(rule);
+    }
+}
+
+export function* iterateCSSRulesGenerator(
+    rules: CSSRuleList | CSSRule[] | Set<CSSRule>,
+    onImportError?: () => void,
+    importedSheets = new Set<CSSStyleSheet>()
+): Generator<CSSStyleRule> {
+    for (const rule of rules) {
         if (isStyleRule(rule)) {
-            iterate(rule);
+            yield rule;
             if (rule.cssRules?.length > 0) {
-                iterateCSSRules(rule.cssRules, iterate, onImportError, importedSheets);
+                yield* iterateCSSRulesGenerator(rule.cssRules, onImportError, importedSheets);
             }
         } else if (isImportRule(rule)) {
             try {
                 const importedSheet = rule.styleSheet!;
                 if (!importedSheets.has(importedSheet)) {
                     importedSheets.add(importedSheet);
-                    iterateCSSRules(importedSheet.cssRules, iterate, onImportError, importedSheets);
+                    yield* iterateCSSRulesGenerator(importedSheet.cssRules, onImportError, importedSheets);
                 }
             } catch (err) {
                 logInfo(`Found a non-loaded link.`);
@@ -33,20 +43,20 @@ export function iterateCSSRules(
             const isNotScreen = !isScreenOrAllOrQuery && media.some((m) => ignoredMedia.some((i) => m.startsWith(i)));
 
             if (isScreenOrAllOrQuery || !isNotScreen) {
-                iterateCSSRules(rule.cssRules, iterate, onImportError, importedSheets);
+                yield* iterateCSSRulesGenerator(rule.cssRules, onImportError, importedSheets);
             }
         } else if (isSupportsRule(rule)) {
             if (CSS.supports(rule.conditionText)) {
-                iterateCSSRules(rule.cssRules, iterate, onImportError, importedSheets);
+                yield* iterateCSSRulesGenerator(rule.cssRules, onImportError, importedSheets);
             }
         } else if (isLayerRule(rule)) {
-            iterateCSSRules(rule.cssRules, iterate, onImportError, importedSheets);
+            yield* iterateCSSRulesGenerator(rule.cssRules, onImportError, importedSheets);
         } else if (isContainerRule(rule)) {
-            iterateCSSRules(rule.cssRules, iterate, onImportError, importedSheets);
+            yield* iterateCSSRulesGenerator(rule.cssRules, onImportError, importedSheets);
         } else {
             logWarn(`CSSRule type not supported`, rule);
         }
-    });
+    }
 }
 
 export const ignoredMedia = [
@@ -80,8 +90,7 @@ const shorthandVarDepPropRegexps = isSafari ? shorthandVarDependantProperties.ma
     return [prop, regexp] as [string, RegExp];
 }) : null;
 
-export function iterateCSSDeclarations(style: CSSStyleDeclaration, iterate: (property: string, value: string) => void): void {
-    const cssText = style.cssText;
+export function iterateCSSDeclarations(style: CSSStyleDeclaration, iterate: (property: string, value: string) => void, cssText = style.cssText): void {
     if (cssText.includes('var(')) {
         if (isSafari) {
             // Safari doesn't show shorthand properties' values

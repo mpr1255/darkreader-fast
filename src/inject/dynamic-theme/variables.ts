@@ -3,10 +3,11 @@ import type {RGBA} from '../../utils/color';
 import {getRGBValues, parseColorWithCache} from '../../utils/color';
 import {getParenthesesRange} from '../../utils/text';
 
-import {iterateCSSRules, iterateCSSDeclarations} from './css-rules';
+import {iterateCSSRulesGenerator, iterateCSSDeclarations} from './css-rules';
 import {modifyBackgroundColor, modifyBorderColor, modifyForegroundColor} from './modify-colors';
 import {getBgImageModifier, getShadowModifierWithInfo, isFilterCompatibleProp, pushFilterSelector} from './modify-css';
 import type {CSSValueModifier, FilterType} from './modify-css';
+import {runStyleTask} from './style-task';
 
 export interface ModifiedVarDeclaration {
     property: string;
@@ -45,8 +46,16 @@ export class VariablesStore {
     private notifyingVarFilterTypes = new Set<string>();
     private varsChanged = false;
     private onRootVariableDefined: () => void;
+    private matching = false;
+    private matchingGeneration = 0;
+    private matchCallbacks = new Set<() => void>();
+    private cancelMatching: (() => void) | null = null;
 
     clear(): void {
+        this.matchingGeneration++;
+        this.matchCallbacks.clear();
+        this.cancelMatching?.();
+        this.matching = false;
         this.varTypes.clear();
         this.rulesQueue.clear();
         this.inlineStyleQueue.splice(0);
@@ -78,7 +87,31 @@ export class VariablesStore {
         this.inlineStyleQueue.push(style);
     }
 
-    matchVariablesAndDependents(): void {
+    matchVariablesAndDependents(onComplete?: () => void): void {
+        if (!this.matching && this.rulesQueue.size === 0 && this.inlineStyleQueue.length === 0) {
+            onComplete?.();
+            return;
+        }
+        if (onComplete) {
+            this.matchCallbacks.add(onComplete);
+        }
+        if (this.matching) {
+            return;
+        }
+        const generation = this.matchingGeneration;
+        this.matching = true;
+        this.cancelMatching = runStyleTask(this.matchVariables(), () => generation !== this.matchingGeneration, () => {
+            if (generation !== this.matchingGeneration) {
+                return;
+            }
+            this.matching = false;
+            const callbacks = [...this.matchCallbacks];
+            this.matchCallbacks.clear();
+            callbacks.forEach((callback) => callback());
+        });
+    }
+
+    private* matchVariables(): Generator {
         if (this.rulesQueue.size === 0 && this.inlineStyleQueue.length === 0) {
             return;
         }
@@ -86,7 +119,7 @@ export class VariablesStore {
         this.initialVarTypes = new Map(this.varTypes);
         this.varsChanged = false;
         this.collectRootVariables();
-        this.collectVariablesAndVarDep();
+        yield* this.collectVariablesAndVarDep();
         this.collectRootVarDependents();
         if (!this.varsChanged) {
             return;
@@ -415,14 +448,16 @@ export class VariablesStore {
         allRefs.forEach((v) => this.subscribeForVarTypeChange(v, callback));
     }
 
-    private collectVariablesAndVarDep() {
-        this.rulesQueue.forEach((rules) => {
-            iterateCSSRules(rules, (rule) => {
+    private* collectVariablesAndVarDep(): Generator {
+        for (const rules of this.rulesQueue) {
+            this.rulesQueue.delete(rules);
+            for (const rule of iterateCSSRulesGenerator(rules)) {
+                yield;
                 if (rule.style) {
                     this.collectVarsFromCSSDeclarations(rule.style);
                 }
-            });
-        });
+            }
+        }
         this.inlineStyleQueue.forEach((style) => {
             this.collectVarsFromCSSDeclarations(style);
         });
@@ -431,6 +466,10 @@ export class VariablesStore {
     }
 
     private collectVarsFromCSSDeclarations(style: CSSStyleDeclaration) {
+        const cssText = style.cssText;
+        if (!cssText.includes('--')) {
+            return;
+        }
         iterateCSSDeclarations(style, (property, value) => {
             if (isVariable(property)) {
                 this.inspectVariable(property, value);
@@ -438,7 +477,7 @@ export class VariablesStore {
             if (isVarDependant(value)) {
                 this.inspectVarDependant(property, value);
             }
-        });
+        }, cssText);
     }
 
     private shouldProcessRootVariables() {

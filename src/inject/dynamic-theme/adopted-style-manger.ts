@@ -50,6 +50,7 @@ function isDarkReaderSheet(sheet: CSSStyleSheet): boolean {
 
 export function createAdoptedStyleSheetOverride(node: Document | ShadowRoot): AdoptedStyleSheetManager {
     let cancelAsyncOperations = false;
+    let renderId = 0;
 
     function iterateSourceSheets(iterator: (sheet: CSSStyleSheet) => void) {
         forEach(getAdoptedSheets(node), (sheet) => {
@@ -121,6 +122,8 @@ export function createAdoptedStyleSheetOverride(node: Document | ShadowRoot): Ad
     let sourceDeclarations = new WeakSet<CSSStyleDeclaration>();
 
     function render(theme: Theme, ignoreImageAnalysis: string[]) {
+        const currentRenderId = ++renderId;
+        const isAsyncCancelled = () => cancelAsyncOperations || currentRenderId !== renderId;
         clear();
 
         const sheets = getAdoptedSheets(node);
@@ -140,7 +143,6 @@ export function createAdoptedStyleSheetOverride(node: Document | ShadowRoot): Ad
 
             const rules = sheet.cssRules;
             const override = createOverrideSheet();
-            overridesBySource.set(sheet, override);
             iterateCSSRules(rules, (rule) => sourceDeclarations.add(rule.style));
 
             const prepareSheet = () => {
@@ -160,7 +162,13 @@ export function createAdoptedStyleSheetOverride(node: Document | ShadowRoot): Ad
                 theme,
                 ignoreImageAnalysis,
                 force: false,
-                isAsyncCancelled: () => cancelAsyncOperations,
+                isAsyncCancelled,
+                onComplete: () => {
+                    if (!isAsyncCancelled()) {
+                        overridesBySource.set(sheet, override);
+                        rulesChangeKey = getRulesChangeKey();
+                    }
+                },
             });
         }
 

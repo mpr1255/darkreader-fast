@@ -1371,4 +1371,33 @@ describe('CSS VARIABLES OVERRIDE', () => {
         const elementStyle = getComputedStyle(container.querySelector('h1')!);
         expect(elementStyle.backgroundColor).toBe('rgb(204, 0, 0)');
     });
+
+    it('should finish variable matching after a stylesheet changes while suspended', async () => {
+        const style = document.createElement('style');
+        style.textContent = `${Array.from({length: 256}, (_, i) => `:root { --test-${i}: red; }`).join('')}h1 { color: var(--test-255); }`;
+        container.append(style, document.createElement('h1'));
+        let time = performance.now();
+        const clock = spyOn(performance, 'now').and.callFake(() => time += 5);
+        createOrUpdateDynamicTheme(theme, null, false);
+        clock.and.callThrough();
+        style.textContent = ':root { --test-255: red; } h1 { color: var(--test-255); }';
+        for (let i = 0; i < 100 && getComputedStyle(container.querySelector('h1')!).color !== 'rgb(255, 26, 26)'; i++) {
+            await timeout(10);
+        }
+        expect(getComputedStyle(container.querySelector('h1')!).color).toBe('rgb(255, 26, 26)');
+        expect(document.querySelector('.darkreader--fallback')!.textContent).toBe('');
+    });
+
+    it('should not recreate overrides when disabled during variable matching', async () => {
+        const style = document.createElement('style');
+        style.textContent = Array.from({length: 256}, (_, i) => `:root { --test-${i}: red; }`).join('');
+        container.append(style);
+        let time = performance.now();
+        const clock = spyOn(performance, 'now').and.callFake(() => time += 5);
+        createOrUpdateDynamicTheme(theme, null, false);
+        clock.and.callThrough();
+        removeDynamicTheme();
+        await timeout(50);
+        expect(document.querySelector('.darkreader')).toBeNull();
+    });
 });
