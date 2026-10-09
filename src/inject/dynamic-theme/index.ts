@@ -707,7 +707,7 @@ function createPDFOverlay(parent: ParentNode) {
     const overlay = document.createElement('div');
     overlay.classList.add('darkreader');
     overlay.classList.add('darkreader--pdf-overlay');
-    overlay.style.backdropFilter = 'invert(100%) contrast(90%)';
+    overlay.style.backdropFilter = 'invert(85%)';
     overlay.style.pointerEvents = 'none';
     overlay.style.position = 'fixed';
     overlay.style.left = '0px';
@@ -749,7 +749,7 @@ function tryInvertChromePDF() {
         createPDFOverlay(root);
     } else {
         const sheet = new CSSStyleSheet();
-        sheet.replaceSync('[type="application/pdf"] { filter: invert(1) contrast(0.9); }');
+        sheet.replaceSync('[type="application/pdf"] { filter: invert(85%); }');
         root.adoptedStyleSheets.push(sheet);
         cleaners.push(() => {
             const index = root.adoptedStyleSheets.indexOf(sheet);

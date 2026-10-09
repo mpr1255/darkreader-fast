@@ -25,6 +25,10 @@ export default class UserStorage {
 
     private static fillDefaults(settings: UserSettings) {
         settings.theme = {...DEFAULT_THEME, ...settings.theme};
+        // Settings saved before the background became grey keep the old near-black.
+        if (settings.theme.darkSchemeBackgroundColor === '#181a1b') {
+            settings.theme.darkSchemeBackgroundColor = DEFAULT_THEME.darkSchemeBackgroundColor;
+        }
         settings.time = {...DEFAULT_SETTINGS.time, ...settings.time};
         settings.presets.forEach((preset) => {
             preset.theme = {...DEFAULT_THEME, ...preset.theme};

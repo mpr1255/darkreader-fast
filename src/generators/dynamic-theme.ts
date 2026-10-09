@@ -69,8 +69,8 @@ export function getDynamicThemeFixesFor(url: string, text: string, index: SiteFi
         ];
 
         const inversionFix = __CHROMIUM_MV2__ || __CHROMIUM_MV3__ ?
-            '\nembed[type="application/pdf"][src="about:blank"] { filter: invert(100%) contrast(90%); }' :
-            '\nembed[type="application/pdf"] { filter: invert(100%) contrast(90%); }';
+            '\nembed[type="application/pdf"][src="about:blank"] { filter: invert(85%); }' :
+            '\nembed[type="application/pdf"] { filter: invert(85%); }';
         if (!commonFix.css.endsWith(inversionFix)) {
             commonFix.css += inversionFix;
         }
