@@ -37,6 +37,16 @@ describe('COLOR PARSING', () => {
         expect(getComputedStyle(container).backgroundColor).toBe('rgba(41, 136, 41, 0.4)');
     });
 
+    it('should keep pale tints pale', async () => {
+        container.innerHTML = multiline(
+            '<style>',
+            '    body { background-color: #fdfbf7; }',
+            '</style>',
+        );
+        createOrUpdateDynamicTheme(theme, null, false);
+        expect(getComputedStyle(container).backgroundColor).toBe('rgb(31, 29, 25)');
+    });
+
     it('should modify HSL', async () => {
         container.innerHTML = multiline(
             '<style>',

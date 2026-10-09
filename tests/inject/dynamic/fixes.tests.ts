@@ -107,7 +107,7 @@ describe('FIXES', () => {
         );
         createOrUpdateDynamicTheme({...DEFAULT_THEME, darkSchemeBackgroundColor: '#181a1b'}, null, false);
 
-        expect(getComputedStyle(container).backgroundColor).toBe('rgb(89, 0, 16)');
+        expect(getComputedStyle(container).backgroundColor).toBe('rgb(76, 13, 24)');
         const metaElement: HTMLMetaElement = document.createElement('meta');
         metaElement.name = 'darkreader-lock';
         document.head.appendChild(metaElement);

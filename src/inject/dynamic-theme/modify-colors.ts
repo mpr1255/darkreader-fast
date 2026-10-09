@@ -181,7 +181,11 @@ function modifyBgHSL({h, s, l, a}: HSLA, pole: HSLA): HSLA {
         lx *= 0.75;
     }
 
-    return {h: hx, s, l: lx, a};
+    // Keep the colour's chroma rather than its HSL saturation. A pale tint such
+    // as #fdfbf7 has s = 0.6, and darkening it at that saturation turned it brown.
+    const sx = lx > 0 ? Math.min(s, s * (1 - l) / lx) : 0;
+
+    return {h: hx, s: sx, l: lx, a};
 }
 
 function _modifyBackgroundColor(rgb: RGBA, theme: Theme) {
