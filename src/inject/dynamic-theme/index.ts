@@ -470,19 +470,27 @@ function onDOMReady() {
     logWarn(`DOM is ready, but still have styles being loaded.`, loadingStyles);
 }
 
+let hasRunDynamicStyle = false;
+
 function runDynamicStyle() {
+    hasRunDynamicStyle = true;
     createDynamicStyleOverrides();
     watchForUpdates();
 }
 
 function createThemeAndWatchForUpdates() {
     createStaticStyleOverrides();
-    // Theme hidden tabs now, while they load, instead of in one long task
-    // when the user switches to them. The listener only keeps
-    // documentIsVisible() current.
-    runDynamicStyle();
-    if (!documentIsVisible()) {
-        setDocumentVisibilityListener(() => {});
+
+    // A hidden tab is themed while it loads, not in one long task when the
+    // user switches to it. Later re-theming of a hidden tab (after a settings
+    // change, which reaches every tab) still waits until it is shown.
+    if (!documentIsVisible() && hasRunDynamicStyle && !theme!.immediateModify) {
+        setDocumentVisibilityListener(runDynamicStyle);
+    } else {
+        runDynamicStyle();
+        if (!documentIsVisible()) {
+            setDocumentVisibilityListener(() => {});
+        }
     }
 
     changeMetaThemeColorWhenAvailable(theme!);
