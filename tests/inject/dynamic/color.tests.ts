@@ -6,6 +6,9 @@ import {multiline} from '../support/test-utils';
 // The expected colours were computed for upstream's default colours.
 const theme = {
     ...DEFAULT_THEME,
+    // Expected colours assume upstream's neutral brightness and contrast.
+    brightness: 100,
+    contrast: 100,
     darkSchemeBackgroundColor: '#181a1b',
     darkSchemeTextColor: '#e8e6e3',
 };

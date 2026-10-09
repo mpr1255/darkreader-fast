@@ -6,6 +6,8 @@ import {createOrUpdateDynamicTheme, removeDynamicTheme} from '../../../src/injec
 import {removeNode} from '../../../src/inject/utils/dom';
 import {multiline, timeout} from '../support/test-utils';
 
+// Expected colours assume upstream's neutral brightness and contrast.
+const theme = {...DEFAULT_THEME, brightness: 100, contrast: 100};
 let container: HTMLElement;
 
 beforeEach(() => {
@@ -21,11 +23,11 @@ afterEach(() => {
 
 describe('FIXES', () => {
     it('should add custom attributes to root element', () => {
-        createOrUpdateDynamicTheme(DEFAULT_THEME, null, false);
+        createOrUpdateDynamicTheme(theme, null, false);
         expect(document.documentElement.getAttribute(`data-darkreader-mode`)).toBe('dynamic');
         expect(document.documentElement.getAttribute('data-darkreader-scheme')).toBe('dark');
 
-        createOrUpdateDynamicTheme({...DEFAULT_THEME, mode: FilterMode.light}, null, false);
+        createOrUpdateDynamicTheme({...theme, mode: FilterMode.light}, null, false);
         expect(document.documentElement.getAttribute('data-darkreader-scheme')).toBe('dimmed');
     });
 
@@ -43,7 +45,7 @@ describe('FIXES', () => {
             disableStyleSheetsProxy: false,
             disableCustomElementRegistryProxy: false,
         }];
-        createOrUpdateDynamicTheme(DEFAULT_THEME, fixes, false);
+        createOrUpdateDynamicTheme(theme, fixes, false);
         expect(getComputedStyle(container.querySelector('.logo')!).filter).toBe('invert(1) hue-rotate(180deg) contrast(0.9)');
     });
 
@@ -61,7 +63,7 @@ describe('FIXES', () => {
             disableStyleSheetsProxy: false,
             disableCustomElementRegistryProxy: false,
         }];
-        createOrUpdateDynamicTheme(DEFAULT_THEME, fixes, false);
+        createOrUpdateDynamicTheme(theme, fixes, false);
         expect(getComputedStyle(container.querySelector('.text')!).color).toBe('rgb(255, 0, 0)');
     });
 
@@ -79,7 +81,7 @@ describe('FIXES', () => {
             disableStyleSheetsProxy: false,
             disableCustomElementRegistryProxy: false,
         }];
-        createOrUpdateDynamicTheme(DEFAULT_THEME, fixes, false);
+        createOrUpdateDynamicTheme(theme, fixes, false);
         expect(getComputedStyle(container.querySelector('.text')!).backgroundColor).toBe('rgb(128, 0, 128)');
     });
 
@@ -92,7 +94,7 @@ describe('FIXES', () => {
             '    }',
             '</style>',
         );
-        createOrUpdateDynamicTheme(DEFAULT_THEME, null, false);
+        createOrUpdateDynamicTheme(theme, null, false);
 
         expect(getComputedStyle(document.body).backgroundColor).toBe('rgb(255, 192, 203)');
     });
@@ -105,7 +107,7 @@ describe('FIXES', () => {
             '    }',
             '</style>',
         );
-        createOrUpdateDynamicTheme({...DEFAULT_THEME, darkSchemeBackgroundColor: '#181a1b'}, null, false);
+        createOrUpdateDynamicTheme({...theme, darkSchemeBackgroundColor: '#181a1b'}, null, false);
 
         expect(getComputedStyle(container).backgroundColor).toBe('rgb(76, 13, 24)');
         const metaElement: HTMLMetaElement = document.createElement('meta');

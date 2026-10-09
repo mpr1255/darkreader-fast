@@ -5,6 +5,9 @@ import {multiline, timeout} from '../support/test-utils';
 
 const theme = {
     ...DEFAULT_THEME,
+    // Expected colours assume upstream's neutral brightness and contrast.
+    brightness: 100,
+    contrast: 100,
     darkSchemeBackgroundColor: 'black',
     darkSchemeTextColor: 'white',
 };
