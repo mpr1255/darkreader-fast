@@ -24,6 +24,12 @@ interface Overrides {
     };
 }
 
+// HTML attributes whose override is stored under a different property name.
+const attributeTargets: Record<string, string> = {
+    'bgcolor': 'background-color',
+    'background': 'background-image',
+};
+
 const overrides: Overrides = {
     'background-color': {
         customProp: '--darkreader-inline-bgcolor',
@@ -465,7 +471,7 @@ export function overrideInlineStyle(element: HTMLElement, theme: Theme, ignoreIn
                 return;
             }
 
-            const targetCSSProp = sourceAttr === 'style' ? sourceCSSProp : sourceAttr;
+            const targetCSSProp = sourceAttr === 'style' ? sourceCSSProp : attributeTargets[sourceAttr] ?? sourceAttr;
             const {customProp, dataAttr} = overrides[targetCSSProp] ?? shorthandOverrides[targetCSSProp];
             element.style.setProperty(customProp, value);
             if (!element.hasAttribute(dataAttr)) {
