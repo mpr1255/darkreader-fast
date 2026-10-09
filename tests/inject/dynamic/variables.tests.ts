@@ -143,6 +143,21 @@ describe('CSS VARIABLES OVERRIDE', () => {
         expect(getComputedStyle(container.querySelector('h1 strong')!).color).toBe('rgb(140, 255, 140)');
     });
 
+    it('should override background variable that is later used as a border colour', () => {
+        container.innerHTML = multiline(
+            '<style>',
+            '    h1 { background: var(--bg); }',
+            '    h1 strong { border-color: var(--bg); }',
+            '</style>',
+            '<style>',
+            '    :root { --bg: gray; }',
+            '</style>',
+            '<h1>CSS <strong>variables</strong>!</h1>',
+        );
+        createOrUpdateDynamicTheme(theme, null, false);
+        expect(getComputedStyle(container.querySelector('h1')!).backgroundColor).toBe('rgb(102, 102, 102)');
+    });
+
     it('should skip undefined variables', () => {
         container.innerHTML = multiline(
             '<style>',

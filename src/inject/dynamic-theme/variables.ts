@@ -551,7 +551,11 @@ export class VariablesStore {
             this.varsChanged = true;
         }
         this.unknownColorVars.delete(varName);
-        this.unknownBgVars.delete(varName);
+        // A text or border type does not say whether a background use is a
+        // colour or an image, so that is still decided after matching.
+        if (newType & (VAR_TYPE_BG_COLOR | VAR_TYPE_BG_IMG)) {
+            this.unknownBgVars.delete(varName);
+        }
     }
 
     private collectRootVarDependents() {
