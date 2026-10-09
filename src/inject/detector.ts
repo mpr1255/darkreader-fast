@@ -115,6 +115,20 @@ function runCheck(callback: (hasDarkTheme: boolean) => void) {
         }
     }
 
+    // While a hidden tab loads, Chromium can keep applying the style sheets
+    // disabled below, so the check would sample this extension's own colours
+    // and take them for the page's dark theme. Check once the tab is shown.
+    if (document.hidden) {
+        visibilityListener = () => {
+            if (!document.hidden) {
+                stopDarkThemeDetector();
+                runCheck(callback);
+            }
+        };
+        document.addEventListener('visibilitychange', visibilityListener);
+        return;
+    }
+
     const drSheets = Array.from(document.styleSheets).filter((s) => (s.ownerNode as HTMLElement)?.classList.contains('darkreader'))
         .concat(
             Array.isArray(document.adoptedStyleSheets) ? Array.from(document.adoptedStyleSheets).filter(
@@ -152,6 +166,7 @@ function hasSomeStyle() {
 
 let observer: MutationObserver | null;
 let readyStateListener: (() => void) | null;
+let visibilityListener: (() => void) | null;
 
 function canCheckForStyle() {
     if (!(
@@ -224,6 +239,10 @@ export function stopDarkThemeDetector(): void {
     if (readyStateListener) {
         document.removeEventListener('readystatechange', readyStateListener);
         readyStateListener = null;
+    }
+    if (visibilityListener) {
+        document.removeEventListener('visibilitychange', visibilityListener);
+        visibilityListener = null;
     }
     stopDetectingUsingHint();
 }
