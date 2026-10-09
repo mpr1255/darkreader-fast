@@ -36,7 +36,9 @@ function writeImageDetailsQueue() {
             try {
                 const json = JSON.stringify(details);
                 sessionStorage.setItem(`${STORAGE_KEY_IMAGE_DETAILS_PREFIX}${url}`, json);
-                cachedImageUrls.push(url);
+                if (!cachedImageUrls.includes(url)) {
+                    cachedImageUrls.push(url);
+                }
             } catch (err) {
             }
         }
