@@ -10,8 +10,8 @@ declare const __PLUS__: boolean;
 
 export const DEFAULT_COLORS = {
     darkScheme: {
-        background: '#262626',
-        text: '#e8e6e3',
+        background: '#1f1f1f',
+        text: '#f0f0f0',
     },
     lightScheme: {
         background: '#dcdad7',

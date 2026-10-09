@@ -12,9 +12,9 @@ if (
 ) {
     const css = [
         'html, body, body :not(iframe) {',
-        '    background-color: #262626 !important;',
+        '    background-color: #1f1f1f !important;',
         '    border-color: #776e62 !important;',
-        '    color: #e8e6e3 !important;',
+        '    color: #f0f0f0 !important;',
         '}',
         'html, body {',
         '    opacity: 1 !important;',

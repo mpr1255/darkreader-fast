@@ -3,10 +3,11 @@ import {DEFAULT_THEME} from '../../../src/defaults';
 import {createOrUpdateDynamicTheme, removeDynamicTheme} from '../../../src/inject/dynamic-theme';
 import {multiline} from '../support/test-utils';
 
-// The expected colours were computed for upstream's #181a1b background.
+// The expected colours were computed for upstream's default colours.
 const theme = {
     ...DEFAULT_THEME,
     darkSchemeBackgroundColor: '#181a1b',
+    darkSchemeTextColor: '#e8e6e3',
 };
 let container: HTMLElement;
 
