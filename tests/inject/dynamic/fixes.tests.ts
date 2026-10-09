@@ -105,7 +105,7 @@ describe('FIXES', () => {
             '    }',
             '</style>',
         );
-        createOrUpdateDynamicTheme(DEFAULT_THEME, null, false);
+        createOrUpdateDynamicTheme({...DEFAULT_THEME, darkSchemeBackgroundColor: '#181a1b'}, null, false);
 
         expect(getComputedStyle(container).backgroundColor).toBe('rgb(89, 0, 16)');
         const metaElement: HTMLMetaElement = document.createElement('meta');
