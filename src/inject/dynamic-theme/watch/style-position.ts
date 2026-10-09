@@ -45,9 +45,27 @@ export function watchForStylePositions(
     const prevStyleSiblings = new WeakMap<Element, Element>();
     const nextStyleSiblings = new WeakMap<Element, Element>();
 
+    // Dark Reader's own styles are inserted next to the page's styles after
+    // their sheets load, so they are skipped when comparing positions.
+    function getPrevSibling(style: StyleElement) {
+        let node = style.previousElementSibling;
+        while (node && node.classList.contains('darkreader')) {
+            node = node.previousElementSibling;
+        }
+        return node!;
+    }
+
+    function getNextSibling(style: StyleElement) {
+        let node = style.nextElementSibling;
+        while (node && node.classList.contains('darkreader')) {
+            node = node.nextElementSibling;
+        }
+        return node!;
+    }
+
     function saveStylePosition(style: StyleElement) {
-        prevStyleSiblings.set(style, style.previousElementSibling!);
-        nextStyleSiblings.set(style, style.nextElementSibling!);
+        prevStyleSiblings.set(style, getPrevSibling(style));
+        nextStyleSiblings.set(style, getNextSibling(style));
     }
 
     function forgetStylePosition(style: StyleElement) {
@@ -57,8 +75,8 @@ export function watchForStylePositions(
 
     function didStylePositionChange(style: StyleElement) {
         return (
-            style.previousElementSibling !== prevStyleSiblings.get(style) ||
-            style.nextElementSibling !== nextStyleSiblings.get(style)
+            getPrevSibling(style) !== prevStyleSiblings.get(style) ||
+            getNextSibling(style) !== nextStyleSiblings.get(style)
         );
     }
 
