@@ -1,8 +1,7 @@
 import {canInjectScript} from '../background/utils/extension-api';
 import type {MessageBGtoCS, MessageCStoBG, MessageUItoBG} from '../definitions';
 import {MessageTypeCStoBG, MessageTypeBGtoCS, MessageTypeUItoBG} from '../utils/message';
-import {isFirefox} from '../utils/platform';
-import {StateManager} from '../utils/state-manager';
+import {isFirefox, isNonPersistent} from '../utils/platform';
 import {getActiveTab, queryTabs} from '../utils/tabs';
 import {getURLHostOrProtocol} from '../utils/url';
 import IconManager from './icon-manager';
@@ -64,17 +63,18 @@ const stateIndependentMessages: Array<MessageTypeCStoBG | MessageTypeUItoBG> = [
  */
 export default class TabManager {
     private static tabs: TabManagerState['tabs'];
-    private static stateManager: StateManager<TabManagerState>;
+    private static loading: Promise<void> | null = null;
     private static fileLoader: FileLoader | null = null;
     private static onColorSchemeChange: TabManagerOptions['onColorSchemeChange'];
     private static getTabMessage: TabManagerOptions['getTabMessage'];
     private static waitUntilReady: TabManagerOptions['waitUntilReady'];
     private static ready = false;
-    private static timestamp: TabManagerState['timestamp'];
+    private static timestamp: TabManagerState['timestamp'] = 0;
     private static readonly LOCAL_STORAGE_KEY = 'TabManager-state';
+    private static readonly TAB_KEY_PREFIX = 'TabManager-tab-';
+    private static readonly TIMESTAMP_KEY = 'TabManager-timestamp';
 
     static init({getConnectionMessage, onColorSchemeChange, getTabMessage, waitUntilReady}: TabManagerOptions): void {
-        TabManager.stateManager = new StateManager<TabManagerState>(TabManager.LOCAL_STORAGE_KEY, this, {tabs: {}, timestamp: 0}, logWarn);
         TabManager.tabs = {};
         TabManager.onColorSchemeChange = onColorSchemeChange;
         TabManager.getTabMessage = getTabMessage;
@@ -143,7 +143,7 @@ export default class TabManager {
                     const tabURL = ((__CHROMIUM_MV2__ || __CHROMIUM_MV3__) && isTopFrame) ? url : sender.tab!.url!;
                     const documentId: string | null = __CHROMIUM_MV3__ ? sender.documentId! : (sender.documentId || null);
 
-                    TabManager.stateManager.loadState().then(() => {
+                    TabManager.loadState().then(() => {
                         const existingFrame = TabManager.tabs[tabId]?.[frameId!];
                         if (existingFrame && existingFrame.scriptId === scriptId && existingFrame.documentId === documentId) {
                             return;
@@ -151,7 +151,7 @@ export default class TabManager {
                         TabManager.addFrame(tabId, frameId!, documentId, scriptId, url, isTopFrame);
                         const topFrameHasDarkTheme = isTopFrame ? false : TabManager.tabs[tabId]?.[0]?.darkThemeDetected;
                         reply(tabURL, url, isTopFrame, topFrameHasDarkTheme);
-                        TabManager.stateManager.saveState();
+                        TabManager.saveTab(tabId);
                     });
                     break;
                 }
@@ -166,11 +166,11 @@ export default class TabManager {
                     break;
 
                 case MessageTypeCStoBG.DOCUMENT_FREEZE: {
-                    TabManager.stateManager.loadState().then(() => {
+                    TabManager.loadState().then(() => {
                         const info = TabManager.tabs[sender.tab!.id!][sender.frameId!];
                         info.state = DocumentState.FROZEN;
                         info.url = null;
-                        TabManager.stateManager.saveState();
+                        TabManager.saveTab(sender.tab!.id!);
                     });
                     break;
                 }
@@ -183,7 +183,7 @@ export default class TabManager {
                     const url = sender.url!;
                     const documentId: string | null = __CHROMIUM_MV3__ ? sender.documentId! : (sender.documentId! || null);
                     const isTopFrame: boolean = (__CHROMIUM_MV2__ || __CHROMIUM_MV3__) ? (frameId === 0 || message.data.isTopFrame) : frameId === 0;
-                    TabManager.stateManager.loadState().then(() => {
+                    TabManager.loadState().then(() => {
                         if (TabManager.tabs[tabId][frameId].timestamp < TabManager.timestamp) {
                             const response = TabManager.getTabMessage(tabURL, url, isTopFrame);
                             response.scriptId = message.scriptId!;
@@ -198,7 +198,7 @@ export default class TabManager {
                             darkThemeDetected: false,
                             timestamp: TabManager.timestamp,
                         };
-                        TabManager.stateManager.saveState();
+                        TabManager.saveTab(tabId);
                     });
                     break;
                 }
@@ -354,7 +354,7 @@ export default class TabManager {
     }
 
     private static async removeFrame(tabId: number, frameId: number) {
-        await TabManager.stateManager.loadState();
+        await TabManager.loadState();
 
         if (frameId === 0) {
             delete TabManager.tabs[tabId];
@@ -366,11 +366,11 @@ export default class TabManager {
             delete TabManager.tabs[tabId][frameId];
         }
 
-        TabManager.stateManager.saveState();
+        TabManager.saveTab(tabId);
     }
 
     static async cleanState() {
-        await TabManager.stateManager.loadState();
+        await TabManager.loadState();
 
         const actualTabs = await queryTabs({});
         const tabIds = Object.keys(TabManager.tabs).map((id) => Number(id));
@@ -384,10 +384,47 @@ export default class TabManager {
         staleTabs.forEach((staleTabId) => {
             if (TabManager.tabs[staleTabId]) {
                 delete TabManager.tabs[staleTabId];
+                TabManager.saveTab(staleTabId);
             }
         });
+    }
 
-        TabManager.stateManager.saveState();
+    // A non-persistent background loses its memory whenever the browser stops
+    // it, so tab state is mirrored into storage with one key per tab. Writing
+    // only the tab that changed keeps the cost of a page load independent of
+    // how many tabs are open. Session storage stays in memory and ends with
+    // the browser session, as the tab IDs it describes do.
+    private static get storage(): chrome.storage.StorageArea {
+        return chrome.storage.session ?? chrome.storage.local;
+    }
+
+    private static async loadState(): Promise<void> {
+        if (!isNonPersistent) {
+            return;
+        }
+        if (!TabManager.loading) {
+            TabManager.loading = TabManager.storage.get(null).then((items: Record<string, any>) => {
+                for (const [key, value] of Object.entries(items)) {
+                    if (key.startsWith(TabManager.TAB_KEY_PREFIX)) {
+                        TabManager.tabs[Number(key.slice(TabManager.TAB_KEY_PREFIX.length))] = value;
+                    }
+                }
+                TabManager.timestamp = Math.max(TabManager.timestamp, items[TabManager.TIMESTAMP_KEY] ?? 0);
+            });
+            // Earlier versions rewrote the state of every tab here on each change.
+            chrome.storage.local.remove(TabManager.LOCAL_STORAGE_KEY);
+        }
+        return TabManager.loading;
+    }
+
+    private static saveTab(tabId: number) {
+        if (!isNonPersistent) {
+            return;
+        }
+        const key = TabManager.TAB_KEY_PREFIX + tabId;
+        const frames = TabManager.tabs[tabId];
+        const write = frames ? TabManager.storage.set({[key]: frames}) : TabManager.storage.remove(key);
+        write.catch((error) => logWarn('Could not save tab state', error));
     }
 
     static async getTabURL(tab: chrome.tabs.Tab | null): Promise<string> {
@@ -469,11 +506,17 @@ export default class TabManager {
     // this should be the expected behavior.
     static async sendMessage(onlyUpdateActiveTab = false): Promise<void> {
         TabManager.timestamp++;
+        if (isNonPersistent) {
+            TabManager.storage.set({[TabManager.TIMESTAMP_KEY]: TabManager.timestamp});
+        }
 
         const activeTabHostname = onlyUpdateActiveTab ? getURLHostOrProtocol(await TabManager.getActiveTabURL()) : null;
 
+        // The active tab goes first so the page being looked at is not updated
+        // after every other open tab.
         (await queryTabs({discarded: false}))
             .filter((tab) => Boolean(TabManager.tabs[tab.id!]))
+            .sort((a, b) => Number(b.active) - Number(a.active))
             .forEach((tab) => {
                 const frames = TabManager.tabs[tab.id!];
                 Object.entries(frames)
