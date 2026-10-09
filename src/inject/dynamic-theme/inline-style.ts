@@ -342,6 +342,23 @@ const SMALL_SVG_THRESHOLD = 32;
 const svgNodesRoots = new WeakMap<Node, SVGSVGElement | null>();
 const svgRootSizeTestResults = new WeakMap<SVGSVGElement, boolean>();
 
+// SVG fills are measured with getBoundingClientRect. Measuring and then
+// writing a style for each element in turn forces a layout per element, so
+// queued elements are measured together first and their styles written after.
+const svgMeasureQueue: Array<() => (() => void) | undefined> = [];
+
+function flushSVGMeasureQueue() {
+    const writes = svgMeasureQueue.splice(0).map((measure) => measure());
+    writes.forEach((write) => write?.());
+}
+
+function queueSVGMeasure(measure: () => (() => void) | undefined) {
+    svgMeasureQueue.push(measure);
+    if (svgMeasureQueue.length === 1) {
+        queueMicrotask(flushSVGMeasureQueue);
+    }
+}
+
 function getSVGElementRoot(svgElement: SVGElement): SVGSVGElement | null {
     if (!svgElement) {
         return null;
@@ -595,11 +612,11 @@ export function overrideInlineStyle(element: HTMLElement, theme: Theme, ignoreIn
                     // the DOM is not in the `complete` readystate, it will cause the layout to be drawn
                     // and it will cause a layout of unstyled content which results in white flashes.
                     // Therefore, check if the DOM is at the `complete` readystate.
-                    const handleSVGElement = () => {
+                    const measureSVGElement = () => {
                         let isSVGSmall = false;
                         const root = getSVGElementRoot(element);
                         if (!root) {
-                            return;
+                            return undefined;
                         }
                         if (svgRootSizeTestResults.has(root)) {
                             isSVGSmall = svgRootSizeTestResults.get(root)!;
@@ -615,8 +632,9 @@ export function overrideInlineStyle(element: HTMLElement, theme: Theme, ignoreIn
                             const {width, height} = element.getBoundingClientRect();
                             isBg = (width > SMALL_SVG_THRESHOLD || height > SMALL_SVG_THRESHOLD);
                         }
-                        overrideValue('fill', '', isBg ? 'background-color' : 'color', value, value);
+                        return () => overrideValue('fill', '', isBg ? 'background-color' : 'color', value, value);
                     };
+                    const handleSVGElement = () => queueSVGMeasure(measureSVGElement);
 
                     if (isReadyStateComplete()) {
                         handleSVGElement();
