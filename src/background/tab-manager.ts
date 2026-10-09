@@ -145,11 +145,14 @@ export default class TabManager {
 
                     TabManager.loadState().then(() => {
                         const existingFrame = TabManager.tabs[tabId]?.[frameId!];
+                        const topFrameHasDarkTheme = isTopFrame ? false : TabManager.tabs[tabId]?.[0]?.darkThemeDetected;
                         if (existingFrame && existingFrame.scriptId === scriptId && existingFrame.documentId === documentId) {
+                            // The page asks again only when no reply arrived, for example
+                            // when the worker stopped before sending it.
+                            reply(tabURL, url, isTopFrame, topFrameHasDarkTheme);
                             return;
                         }
                         TabManager.addFrame(tabId, frameId!, documentId, scriptId, url, isTopFrame);
-                        const topFrameHasDarkTheme = isTopFrame ? false : TabManager.tabs[tabId]?.[0]?.darkThemeDetected;
                         reply(tabURL, url, isTopFrame, topFrameHasDarkTheme);
                         TabManager.saveTab(tabId);
                     });
