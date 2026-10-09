@@ -100,6 +100,21 @@ function runCheck(callback: (hasDarkTheme: boolean) => void) {
         return;
     }
 
+    // GitHub declares both palettes on <html>. Reading them avoids disabling
+    // every override and forcing a full-page style recalculation to sample it.
+    if (location.hostname === 'github.com') {
+        const {colorMode, lightTheme, darkTheme} = document.documentElement.dataset;
+        const systemDark = isSystemDarkModeEnabled();
+        const mode = colorMode === 'auto' ? (systemDark ? 'dark' : 'light') : colorMode;
+        const palette = mode === 'dark' ? darkTheme : mode === 'light' ? lightTheme : null;
+        if (palette === 'light' || palette === 'dark') {
+            const isDark = palette === 'dark';
+            lightUnderDarkScheme = isDark ? null : systemDark;
+            callback(isDark);
+            return;
+        }
+    }
+
     const drSheets = Array.from(document.styleSheets).filter((s) => (s.ownerNode as HTMLElement)?.classList.contains('darkreader'))
         .concat(
             Array.isArray(document.adoptedStyleSheets) ? Array.from(document.adoptedStyleSheets).filter(
