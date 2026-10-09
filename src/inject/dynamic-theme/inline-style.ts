@@ -26,7 +26,6 @@ interface Overrides {
 
 // HTML attributes whose override is stored under a different property name.
 const attributeTargets: Record<string, string> = {
-    'bgcolor': 'background-color',
     'background': 'background-image',
 };
 
@@ -35,6 +34,11 @@ const overrides: Overrides = {
         customProp: '--darkreader-inline-bgcolor',
         cssProp: 'background-color',
         dataAttr: 'data-darkreader-inline-bgcolor',
+    },
+    'bgcolor': {
+        customProp: '--darkreader-inline-bgcolor',
+        cssProp: 'background-color',
+        dataAttr: 'data-darkreader-inline-bgcolor-attr',
     },
     'background-image': {
         customProp: '--darkreader-inline-bgimage',
@@ -141,6 +145,11 @@ export const INLINE_STYLE_SELECTOR = INLINE_STYLE_ATTRS.map((attr) => `[${attr}]
 export function getInlineOverrideStyle(): string {
     const allOverrides = overridesList.concat(Object.values(shorthandOverrides));
     return allOverrides.map(({dataAttr, customProp, cssProp}) => {
+        if (dataAttr === overrides.bgcolor.dataAttr) {
+            // A bgcolor attribute ranks below every style sheet rule, so its
+            // override must too: no specificity and no !important.
+            return `:where([${dataAttr}]) {\n  ${cssProp}: var(${customProp});\n}`;
+        }
         return [
             `[${dataAttr}] {`,
             `  ${cssProp}: var(${customProp}) !important;`,

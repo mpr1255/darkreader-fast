@@ -36,6 +36,15 @@ describe('INLINE STYLES', () => {
         expect(getComputedStyle(document.querySelector('table')!).backgroundColor).toBe('rgb(0, 0, 0)');
     });
 
+    it('should let style sheets win over a bgcolor attribute', () => {
+        container.innerHTML = multiline(
+            '<style>.bg-gray { background: gray; }</style>',
+            '<table class="bg-gray" bgcolor="black"><tr><td>Style sheet background</td></tr></table>',
+        );
+        createOrUpdateDynamicTheme(theme, null, false);
+        expect(getComputedStyle(document.querySelector('table')!).backgroundColor).toBe('rgb(102, 102, 102)');
+    });
+
     it('should watch for inline style change', async () => {
         container.innerHTML = '<span style="color: red;">Watch inline style</span>';
         createOrUpdateDynamicTheme(theme, null, false);
