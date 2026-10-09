@@ -477,11 +477,12 @@ function runDynamicStyle() {
 
 function createThemeAndWatchForUpdates() {
     createStaticStyleOverrides();
-
-    if (!documentIsVisible() && !theme!.immediateModify) {
-        setDocumentVisibilityListener(runDynamicStyle);
-    } else {
-        runDynamicStyle();
+    // Theme hidden tabs now, while they load, instead of in one long task
+    // when the user switches to them. The listener only keeps
+    // documentIsVisible() current.
+    runDynamicStyle();
+    if (!documentIsVisible()) {
+        setDocumentVisibilityListener(() => {});
     }
 
     changeMetaThemeColorWhenAvailable(theme!);
