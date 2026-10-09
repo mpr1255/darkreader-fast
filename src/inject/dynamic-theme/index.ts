@@ -714,6 +714,8 @@ function createPDFOverlay(parent: ParentNode) {
     overlay.style.right = '0px';
     overlay.style.bottom = '0px';
     overlay.style.top = '56px';
+    // The viewer may insert its frame after the overlay; keep the overlay on top.
+    overlay.style.zIndex = '2147483647';
     parent.append(overlay);
     cleaners.push(() => {
         overlay.remove();

@@ -316,11 +316,9 @@ export class Extension {
                         return false;
                     }
                     function detectPDF(): boolean {
-                        if (document.body.childElementCount !== 1) {
-                            return false;
-                        }
-                        const {nodeName, type} = document.body.childNodes[0] as HTMLEmbedElement;
-                        return nodeName === 'EMBED' && type === 'application/pdf';
+                        // Newer Chromium puts the viewer in a closed shadow root, so the
+                        // body has no children to inspect.
+                        return document.contentType === 'application/pdf';
                     }
 
                     if (__CHROMIUM_MV3__) {
