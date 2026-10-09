@@ -25,7 +25,22 @@ export async function bgFetch(request: FetchRequest): Promise<string> {
         const id = generateUID();
         resolvers.set(id, resolve);
         rejectors.set(id, reject);
-        chrome.runtime.sendMessage<MessageCStoBG>({type: MessageTypeCStoBG.FETCH, data: request, id});
+        const fail = (error: Error) => {
+            resolvers.delete(id);
+            rejectors.delete(id);
+            reject(error);
+        };
+        try {
+            // The background may be restarting, or gone after an extension reload.
+            Promise.resolve(chrome.runtime.sendMessage<MessageCStoBG>({type: MessageTypeCStoBG.FETCH, data: request, id})).catch((error: Error) => {
+                // The reply arrives as a separate message, so a closed reply channel is expected.
+                if (!String(error?.message).includes('message port closed')) {
+                    fail(error);
+                }
+            });
+        } catch (error) {
+            fail(error as Error);
+        }
     });
 }
 

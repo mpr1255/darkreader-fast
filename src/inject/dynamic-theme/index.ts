@@ -740,7 +740,13 @@ function tryInvertChromePDF() {
         return;
     }
 
-    const root = chrome.dom.openOrClosedShadowRoot(document.body);
+    let root: ShadowRoot | null;
+    try {
+        root = chrome.dom.openOrClosedShadowRoot(document.body);
+    } catch {
+        // A copy left in the page by an extension reload has lost the extension APIs.
+        return;
+    }
     if (!root || !root.querySelector('link[href$="/pdf_embedder.css"]')) {
         return;
     }
