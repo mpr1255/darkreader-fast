@@ -1,64 +1,67 @@
 build,round,page,script_ms,longest_block_ms,longest_task_ms,dark_at_ms,stuck_on_cover,theme_rules
-stock,1,GitHub repository,1948,456,461,2781,0,3137
-stock,2,GitHub repository,1746,431,436,2572,0,3137
-stock,3,GitHub repository,1818,449,461,2684,0,3137
-perf,1,GitHub repository,663,2,89,854,0,3137
-perf,2,GitHub repository,630,2,83,840,0,3137
-perf,3,GitHub repository,634,1,84,775,0,3137
-main,1,GitHub repository,455,1,85,1207,0,3137
-main,2,GitHub repository,461,2,84,842,0,3137
-main,3,GitHub repository,447,1,84,803,0,3137
-stock,1,GitHub issue,620,605,1199,,1,0
-stock,2,GitHub issue,565,557,1082,,1,0
-stock,3,GitHub issue,500,490,1315,,1,0
-perf,1,GitHub issue,864,221,1519,,0,3582
-perf,2,GitHub issue,875,250,1081,2425,0,3582
-perf,3,GitHub issue,1033,428,1096,6926,0,3582
-main,1,GitHub issue,617,163,1186,6207,0,3582
-main,2,GitHub issue,619,190,1281,,0,3582
-main,3,GitHub issue,660,195,1102,2286,0,3582
-stock,1,GitHub pull request,730,202,329,,0,2770
-stock,2,GitHub pull request,927,195,367,,0,2770
-stock,3,GitHub pull request,919,193,350,,0,2770
-perf,1,GitHub pull request,927,88,320,,0,2770
-perf,2,GitHub pull request,901,84,294,,0,2770
-perf,3,GitHub pull request,888,84,299,,0,2770
-main,1,GitHub pull request,744,96,303,,0,2770
-main,2,GitHub pull request,747,88,321,,0,2770
-main,3,GitHub pull request,739,85,307,,0,2770
-stock,1,Facebook,721,697,733,1050,0,8253
-stock,2,Facebook,693,668,704,1052,0,8253
-stock,3,Facebook,698,674,709,1040,0,8253
-perf,1,Facebook,333,2,221,692,0,8253
-perf,2,Facebook,324,2,211,648,0,8253
-perf,3,Facebook,313,3,209,914,0,8253
-main,1,Facebook,324,2,213,646,0,8253
-main,2,Facebook,318,2,218,764,0,8253
-main,3,Facebook,316,2,211,644,0,8253
-stock,1,YouTube,680,357,385,,0,7255
-stock,2,YouTube,613,308,334,,0,7255
-stock,3,YouTube,604,300,324,,0,7255
-perf,1,YouTube,627,79,209,,0,7255
-perf,2,YouTube,588,70,198,,0,7255
-perf,3,YouTube,567,71,196,,0,7257
-main,1,YouTube,619,76,207,,0,7255
-main,2,YouTube,568,72,197,,0,7255
-main,3,YouTube,587,73,201,,0,7255
-stock,1,Amazon search,447,100,108,1060,0,3807
-stock,2,Amazon search,434,89,100,1022,0,3804
-stock,3,Amazon search,423,84,91,1185,0,3807
-perf,1,Amazon search,430,12,63,452,0,3804
-perf,2,Amazon search,411,12,63,519,0,3807
-perf,3,Amazon search,411,12,63,712,0,3807
-main,1,Amazon search,402,70,119,467,0,3807
-main,2,Amazon search,387,61,106,427,0,3807
-main,3,Amazon search,383,61,106,447,0,3807
-stock,1,Wikipedia article,168,41,133,436,0,510
-stock,2,Wikipedia article,162,37,151,409,0,510
-stock,3,Wikipedia article,159,34,132,490,0,510
-perf,1,Wikipedia article,116,27,119,400,0,510
-perf,2,Wikipedia article,113,28,101,211,0,510
-perf,3,Wikipedia article,106,27,132,358,0,510
-main,1,Wikipedia article,98,16,91,223,0,510
-main,2,Wikipedia article,98,14,130,290,0,510
-main,3,Wikipedia article,154,56,149,368,0,622
+stock,1,GitHub repository,1801,413,427,2657,0,3137
+stock,2,GitHub repository,1859,461,468,2702,0,3137
+stock,3,GitHub repository,1709,612,628,2530,0,3137
+main,1,GitHub repository,467,2,85,827,0,3137
+main,2,GitHub repository,490,2,87,790,0,3137
+main,3,GitHub repository,460,1,90,796,0,3137
+stock,1,GitHub issue,780,771,1293,,1,0
+stock,2,GitHub issue,451,442,1143,,1,0
+stock,3,GitHub issue,533,524,1082,,1,0
+main,1,GitHub issue,569,138,1141,,0,3582
+main,2,GitHub issue,1231,663,1289,2190,0,3582
+main,3,GitHub issue,632,190,1048,,0,3582
+stock,1,GitHub pull request,957,195,381,,0,2770
+stock,2,GitHub pull request,946,197,390,,0,2770
+stock,3,GitHub pull request,948,204,369,,0,2770
+main,1,GitHub pull request,732,85,311,,0,2770
+main,2,GitHub pull request,774,83,313,,0,2770
+main,3,GitHub pull request,742,88,309,,0,2770
+stock,1,Wikipedia article,172,41,145,457,0,510
+stock,2,Wikipedia article,175,40,138,864,0,510
+stock,3,Wikipedia article,163,40,131,445,0,510
+main,1,Wikipedia article,102,15,132,278,0,510
+main,2,Wikipedia article,97,20,89,617,0,510
+main,3,Wikipedia article,96,15,95,215,0,510
+stock,1,YouTube home,625,305,329,,0,7255
+stock,2,YouTube home,630,321,351,,0,7255
+stock,3,YouTube home,599,296,322,,0,7255
+main,1,YouTube home,686,89,230,,0,7255
+main,2,YouTube home,597,71,203,,0,7255
+main,3,YouTube home,576,71,198,,0,7255
+stock,1,Amazon search,455,103,115,1141,0,3835
+stock,2,Amazon search,462,114,121,1597,0,3842
+stock,3,Amazon search,432,90,94,1015,0,3842
+main,1,Amazon search,462,69,120,554,0,3835
+main,2,Amazon search,407,64,114,527,0,3842
+main,3,Amazon search,369,61,110,491,0,3835
+stock,1,Facebook login page,695,672,710,1017,0,8253
+stock,2,Facebook login page,745,720,760,1077,0,8253
+stock,3,Facebook login page,719,696,733,1045,0,8254
+main,1,Facebook login page,322,3,218,697,0,8253
+main,2,Facebook login page,326,3,218,611,0,8253
+main,3,Facebook login page,322,3,212,623,0,8253
+stock,1,BBC News,63,4,60,,0,168
+stock,2,BBC News,68,4,64,,0,168
+stock,3,BBC News,62,4,58,,0,168
+main,1,BBC News,66,3,58,,0,168
+main,2,BBC News,69,8,60,,0,168
+main,3,BBC News,64,3,59,,0,168
+stock,1,CNN,407,121,149,1308,0,2461
+stock,2,CNN,388,114,140,1291,0,2461
+stock,3,CNN,379,109,134,1347,0,2461
+main,1,CNN,405,66,124,,0,2461
+main,2,CNN,426,67,134,,0,2461
+main,3,CNN,370,63,125,1367,0,2461
+stock,1,The Verge,445,41,127,663,0,1134
+stock,2,The Verge,380,49,127,623,0,1134
+stock,3,The Verge,401,33,127,575,0,1134
+main,1,The Verge,172,9,140,226,0,1134
+main,2,The Verge,179,7,129,174,0,1134
+main,3,The Verge,182,6,128,165,0,1134
+stock,1,Stack Overflow question,312,124,269,,0,2714
+stock,2,Stack Overflow question,298,131,147,,0,2714
+stock,3,Stack Overflow question,340,136,212,,0,2715
+main,1,Stack Overflow question,247,4,170,,0,2714
+main,2,Stack Overflow question,262,0,63,,0,2714
+main,3,Stack Overflow question,2,0,0,,0,0

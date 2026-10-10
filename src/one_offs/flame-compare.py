@@ -57,8 +57,8 @@ def tree(folded: Path):
 
 
 THEMES = {
-    "light": dict(text="#0b0b0b", muted="#52514e", grid="#e1e0d9", bg="#ffffff", series={"stock": "#1baf7a", "main": "#2a78d6"}),
-    "dark": dict(text="#ffffff", muted="#c3c2b7", grid="#2c2c2a", bg="#0d1117", series={"stock": "#199e70", "main": "#3987e5"}),
+    "light": dict(text="#0b0b0b", muted="#52514e", grid="#e1e0d9", bg="#ffffff", series={"stock": "#eb6834", "main": "#2a78d6"}),
+    "dark": dict(text="#ffffff", muted="#c3c2b7", grid="#2c2c2a", bg="#0d1117", series={"stock": "#d95926", "main": "#3987e5"}),
 }
 
 
