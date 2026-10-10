@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import puppeteer from 'puppeteer-core';
 
 // Run from the worktree: node src/one_offs/benchmark-load.mjs EXTENSION|none LABEL PORT URL...
+// CHROME_BIN picks the browser; Chrome for Testing is needed because branded Chrome ignores --load-extension.
 // Output includes all-page long tasks; extMs counts samples with an extension ancestor.
 const [extension, label, port, ...urls] = process.argv.slice(2);
 const colorScheme = process.env.BENCH_COLOR_SCHEME || 'light';
@@ -23,7 +24,8 @@ try {
 }
 const args = ['--headless=new', '--no-first-run', '--no-default-browser-check', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--window-size=1280,900'];
 if (extension !== 'none') args.push(`--disable-extensions-except=${resolve(extension)}`, `--load-extension=${resolve(extension)}`);
-const launched = spawn('/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing', args, {stdio: ['ignore', 'ignore', 'pipe']});
+const chrome = process.env.CHROME_BIN || '/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
+const launched = spawn(chrome, args, {stdio: ['ignore', 'ignore', 'pipe']});
 let launchErrors = '';
 launched.stderr.on('data', (data) => launchErrors = (launchErrors + data).slice(-2000));
 launched.on('error', (error) => launchErrors += error.message);

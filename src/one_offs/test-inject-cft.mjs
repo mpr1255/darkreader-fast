@@ -15,5 +15,5 @@ const config = await karma.config.parseConfig(`${process.cwd()}/tests/inject/kar
     },
 }, {promiseConfig: true, throwErrors: true});
 // Karma owns the temporary profile and closes only the browser it launches.
-process.env.CHROME_BIN = '/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
+process.env.CHROME_BIN ||= '/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
 await new karma.Server(config, (code) => process.exit(code)).start();
