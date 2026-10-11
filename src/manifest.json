@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "name": "Dark Reader (fast fork)",
-    "version": "4.9.133",
-    "version_name": "4.9.133 fast fork",
+    "version": "4.9.133.1",
+    "version_name": "4.9.133.1 fast fork",
     "author": "Alexander Shutau",
     "description": "Fork of Dark Reader 4.9.133: faster page loads, no telemetry. Alt+D toggles the site, Alt+Shift+D the extension.",
     "default_locale": "en",
