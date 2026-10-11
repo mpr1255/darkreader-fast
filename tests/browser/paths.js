@@ -79,6 +79,9 @@ export async function getEdgePath() {
  * @returns {Promise<string>}
  */
 export async function getFirefoxPath() {
+    if (process.env.FIREFOX_BIN) {
+        return process.env.FIREFOX_BIN;
+    }
     if (process.platform === 'darwin') {
         return '/Applications/Firefox Nightly.app/Contents/MacOS/firefox';
     }
