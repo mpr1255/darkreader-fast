@@ -36,6 +36,12 @@ describe('INLINE STYLES', () => {
         expect(getComputedStyle(document.querySelector('table')!).backgroundColor).toBe('rgb(0, 0, 0)');
     });
 
+    it('should override inline text-shadow', () => {
+        container.innerHTML = '<a style="color: #111; text-shadow: 1px 1px #fff, -2px 0 #fff;">Inline text shadow</a>';
+        createOrUpdateDynamicTheme(theme, null, false);
+        expect(getComputedStyle(document.querySelector('a')!).textShadow).toBe('rgb(0, 0, 0) 1px 1px 0px, rgb(0, 0, 0) -2px 0px 0px');
+    });
+
     it('should let style sheets win over a bgcolor attribute', () => {
         container.innerHTML = multiline(
             '<style>.bg-gray { background: gray; }</style>',

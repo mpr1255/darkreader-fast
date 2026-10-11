@@ -75,6 +75,11 @@ const overrides: Overrides = {
         cssProp: 'box-shadow',
         dataAttr: 'data-darkreader-inline-boxshadow',
     },
+    'text-shadow': {
+        customProp: '--darkreader-inline-textshadow',
+        cssProp: 'text-shadow',
+        dataAttr: 'data-darkreader-inline-textshadow',
+    },
     'color': {
         customProp: '--darkreader-inline-color',
         cssProp: 'color',
