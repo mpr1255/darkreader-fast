@@ -60,7 +60,7 @@ export async function getImageDetails(url: string): Promise<ImageDetails> {
                             if (viewBox.length === 4 && !viewBox.some((x) => isNaN(x))) {
                                 const width = viewBox[2] - viewBox[0];
                                 const height = viewBox[3] - viewBox[1];
-                                dataURL = `data:image/svg+xml;base64,${btoa(`<svg width="${width}" height="${height}" ${svgText.slice(5)}`)}`;
+                                dataURL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg width="${width}" height="${height}" ${svgText.slice(5)}`)}`;
                             }
                         }
                     }

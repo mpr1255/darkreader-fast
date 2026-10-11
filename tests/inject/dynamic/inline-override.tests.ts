@@ -42,6 +42,11 @@ describe('INLINE STYLES', () => {
         expect(getComputedStyle(document.querySelector('a')!).textShadow).toBe('rgb(0, 0, 0) 1px 1px 0px, rgb(0, 0, 0) -2px 0px 0px');
     });
 
+    it('should analyze a logo SVG with non-Latin1 text', () => {
+        container.innerHTML = '<svg class="logo" width="10" height="10"><title>Spotify’s logo</title><rect fill="red" width="10" height="10"></rect></svg>';
+        expect(() => createOrUpdateDynamicTheme({...theme, mode: 1}, null, false)).not.toThrow();
+    });
+
     it('should let style sheets win over a bgcolor attribute', () => {
         container.innerHTML = multiline(
             '<style>.bg-gray { background: gray; }</style>',

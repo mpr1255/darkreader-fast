@@ -569,7 +569,7 @@ export function overrideInlineStyle(element: HTMLElement, theme: Theme, ignoreIn
             const analyzeSVGAsImage = () => {
                 let svgString = svg.outerHTML;
                 svgString = svgString.replaceAll('<style class="darkreader darkreader--sync" media="screen"></style>', '');
-                const dataURL = `data:image/svg+xml;base64,${btoa(svgString)}`;
+                const dataURL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
                 getImageDetails(dataURL).then((details) => {
                     if (
                         (details.isDark && details.isTransparent) ||
