@@ -11,6 +11,8 @@ const config = {
     moduleFileExtensions: ['ts', 'tsx', 'js'],
     testEnvironment: '<rootDir>/tests/browser/environment.js',
     verbose: true,
+    // Style checks wait up to about 5 s for re-theming.
+    testTimeout: 15000,
     transform: {'^.+\\.ts(x?)$': ['ts-jest', {tsconfig: '<rootDir>/tests/browser/tsconfig.json'}]},
     globals: {
         __DEBUG__: false,

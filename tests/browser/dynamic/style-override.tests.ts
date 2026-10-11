@@ -179,12 +179,13 @@ describe('Style override', () => {
             styleElement.sheet!.insertRule('strong { color: red }');
         });
 
+        // This fork keeps pale tints from darkening to brown, so pink is less red than upstream's #590010.
         await expect(pageUtils.evaluateScript(async () => {
             const style = document.querySelector('.testcase-style')!;
             (style as HTMLStyleElement).sheet!.insertRule('html { background-color: pink }');
             await new Promise((resolve) => setTimeout(resolve));
             return (style.nextSibling as HTMLStyleElement).sheet!.cssRules[0].cssText;
-        })).resolves.toBe('html { background-color: var(--darkreader-background-ffc0cb, #590010); }');
+        })).resolves.toBe('html { background-color: var(--darkreader-background-ffc0cb, #4c0d18); }');
     });
 
     it('should react to a new style', async () => {

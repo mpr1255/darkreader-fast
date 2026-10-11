@@ -49,6 +49,12 @@ export default class CustomJestEnvironment extends TestEnvironment {
         // Wait for tabs to load?
 
         this.assignTestGlobals(this.global, this.testServer, this.corsServer, this.page);
+
+        // Expected colours assume upstream's theme defaults, not this fork's.
+        const {settings} = await this.global.backgroundUtils.collectData();
+        await this.global.backgroundUtils.changeSettings({
+            theme: {...settings.theme, brightness: 100, contrast: 100, darkSchemeBackgroundColor: '#181a1b', darkSchemeTextColor: '#e8e6e3'},
+        });
     }
 
     /**
@@ -93,6 +99,8 @@ export default class CustomJestEnvironment extends TestEnvironment {
         return await launch({
             args: [
                 '--show-component-extension-options',
+                // Start light whatever the OS uses; tests emulate dark per page.
+                '--blink-settings=preferredColorScheme=1',
             ],
             enableExtensions: [extensionDir],
             executablePath,
@@ -115,6 +123,8 @@ export default class CustomJestEnvironment extends TestEnvironment {
         return await launch({
             args: [
                 '--show-component-extension-options',
+                // Start light whatever the OS uses; tests emulate dark per page.
+                '--blink-settings=preferredColorScheme=1',
             ],
             enableExtensions: [extensionDir],
             executablePath,
@@ -248,9 +258,11 @@ export default class CustomJestEnvironment extends TestEnvironment {
 
         let timeout = 10;
         let errors = checkAll();
-        for (let i = 0; (errors.length !== 0) && (i < 10); i++) {
+        // Idle callbacks fire at once on an idle page, so wait real time
+        // (about 5 s in all) for the background to re-theme the page.
+        for (let i = 0; (errors.length !== 0) && (i < 9); i++) {
             timeout *= 2;
-            await new Promise((r) => requestIdleCallback(r, {timeout}));
+            await new Promise((r) => setTimeout(r, timeout));
             errors = checkAll();
         }
         return errors;
@@ -286,6 +298,8 @@ export default class CustomJestEnvironment extends TestEnvironment {
                 }
                 return;
             }
+            // This fork defers re-theming hidden tabs, and the popup tab may be in front.
+            await page.bringToFront();
             await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: colorScheme}]);
             // Switching Edge to MV3
             // if (global.product === 'edge') {
