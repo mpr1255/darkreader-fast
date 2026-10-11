@@ -390,7 +390,7 @@ export function createStyleSheetModifier(): StyleSheetModifier {
                     if (r.isGroup) {
                         yield* iterateReadyRules(r, createTarget(r, target));
                     } else {
-                        yield {rule: r, target};
+                        yield {rule: r as ReadyStyleRule, target};
                     }
                 }
             }
