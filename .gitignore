@@ -25,6 +25,7 @@ coverage/
 #-----------------------------------
 .idea/
 .vscode/
+.claude/
 .log/
 *.code-workspace
 
