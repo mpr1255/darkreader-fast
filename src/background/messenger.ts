@@ -5,6 +5,7 @@ import {isFirefox} from '../utils/platform';
 import {makeFirefoxHappy} from './make-firefox-happy';
 import {ASSERT} from './utils/log';
 
+declare const __CHROMIUM_MV3__: boolean;
 
 export interface ExtensionAdapter {
     collect: () => Promise<ExtensionData>;
@@ -154,10 +155,14 @@ export default class Messenger {
 
     static reportChanges(data: ExtensionData): void {
         if (Messenger.changeListenerCount > 0) {
-            chrome.runtime.sendMessage<MessageBGtoUI>({
-                type: MessageTypeBGtoUI.CHANGES,
-                data,
-            });
+            const message: MessageBGtoUI = {type: MessageTypeBGtoUI.CHANGES, data};
+            if (__CHROMIUM_MV3__) {
+                // A popup's unsubscribe message can be lost when it closes,
+                // and sending with no page listening rejects.
+                chrome.runtime.sendMessage<MessageBGtoUI>(message).catch(() => Messenger.changeListenerCount = 0);
+                return;
+            }
+            chrome.runtime.sendMessage<MessageBGtoUI>(message);
         }
     }
 }
