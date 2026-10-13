@@ -29,10 +29,10 @@ const standardTask = [
     saveLog,
 ];
 
+// The release folder is loaded unpacked, so it is the only output.
 const buildTask = [
     ...standardTask,
     codeStyle,
-    zip,
 ];
 
 const signedBuildTask = [

@@ -69,7 +69,7 @@ npm install
 npm run build
 ```
 
-This writes one folder, `build/release/darkreader-fast`, and the same files zipped as `build/release/darkreader-fast.zip` for copying elsewhere. Brave and Chrome on macOS and Windows only enable a packed `.crx` that comes from the Web Store, so the folder is what gets loaded.
+This writes one folder, `build/release/darkreader-fast`. Brave and Chrome on macOS and Windows only enable a packed `.crx` that comes from the Web Store, so the folder is what gets loaded.
 
 Then in Brave or Chrome:
 
