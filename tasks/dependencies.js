@@ -87,7 +87,7 @@ async function main() {
     log.ok('Built with new dependencies');
 
     await command('diff -r build-old/release/chrome build/release/chrome');
-    await command('diff -r build-old/release/chrome-mv3 build/release/chrome-mv3');
+    await command('diff -r build-old/release/darkreader-fast build/release/darkreader-fast');
     await command('diff -r build-old/release/firefox build/release/firefox');
     await command('diff -r build-old/release/thunderbird build/release/thunderbird');
     await command('diff darkreader-old.js darkreader.js');

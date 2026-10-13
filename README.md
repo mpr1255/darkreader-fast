@@ -66,13 +66,15 @@ There is no store listing. Build the extension and load it unpacked:
 
 ```
 npm install
-npm run build -- --chrome-mv3
+npm run build
 ```
+
+This writes one folder, `build/release/darkreader-fast`, and the same files zipped as `build/release/darkreader-fast.zip` for copying elsewhere. Brave and Chrome on macOS and Windows only enable a packed `.crx` that comes from the Web Store, so the folder is what gets loaded.
 
 Then in Brave or Chrome:
 
 1. Open `brave://extensions` (`chrome://extensions` in Chrome) and turn on Developer mode.
-2. Click Load unpacked and choose `build/release/chrome-mv3`.
+2. Click Load unpacked and choose `build/release/darkreader-fast`.
 3. Remove stock Dark Reader. In Brave, also set `brave://flags/#enable-force-dark` to Disabled, or pages are darkened twice.
 4. Check the keys at `brave://extensions/shortcuts`.
 
@@ -87,7 +89,7 @@ The browser derives an unpacked extension's ID from its folder path, and synced 
 3. `src/one_offs/flame-compare.py` folds the CPU profiles into `docs/benchmark/*.folded` and draws the flame graphs.
 
 ```
-CHROME_BIN=/path/to/chrome-for-testing node src/one_offs/benchmark-load.mjs build/release/chrome-mv3 main-r1 9410 https://github.com/microsoft/vscode
+CHROME_BIN=/path/to/chrome-for-testing node src/one_offs/benchmark-load.mjs build/release/darkreader-fast main-r1 9410 https://github.com/microsoft/vscode
 ```
 
 The charts come from Chrome for Testing 146, headless, with a fresh profile per build, a light system scheme and no logins, on 10 October 2026. Stock and this fork ran in turn, three rounds each. Stock is upstream 93b124d9. An MDN page was also measured and left out, because Dark Reader's site config marks MDN as having its own dark theme and neither build changes it.

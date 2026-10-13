@@ -134,7 +134,8 @@ function getParams(args) {
         platforms[PLATFORM.CHROMIUM_MV3_PLUS] = true;
     }
     if (allPlatforms) {
-        Object.keys(platforms).forEach((platform) => platforms[platform] = true);
+        // The fork ships one build. Other platforms are built only when named.
+        platforms[PLATFORM.CHROMIUM_MV3] = true;
     }
 
     // TODO(Anton): remove me
